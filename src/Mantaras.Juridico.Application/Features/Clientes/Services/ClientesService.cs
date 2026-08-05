@@ -114,6 +114,9 @@ public class ClientesService : IClientesService
             Localidad = cliente.Localidad,
             Provincia = cliente.Provincia,
             Observaciones = cliente.Observaciones,
+            ClaveSeguridadSocial = cliente.ClaveSeguridadSocial,
+            FechaCreacion = cliente.FechaCreacion,
+            Activo = cliente.Activo,
         };
     }
 

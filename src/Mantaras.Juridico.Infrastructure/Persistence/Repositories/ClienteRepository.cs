@@ -39,6 +39,18 @@ public class ClienteRepository : IClienteRepository
         await _dbContext.Clientes.AddAsync(cliente, cancellationToken);
     }
 
+    public async Task<IReadOnlyCollection<Cliente>> ObtenerActivosPorIdsAsync(
+        IReadOnlyCollection<long> clienteIds,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var ids = clienteIds.Distinct().ToArray();
+
+        return await _dbContext
+            .Clientes.Where(x => ids.Contains(x.ClienteId) && x.Activo)
+            .ToListAsync(cancellationToken);
+    }
+
     public Task GuardarCambiosAsync(CancellationToken cancellationToken = default)
     {
         return _dbContext.SaveChangesAsync(cancellationToken);

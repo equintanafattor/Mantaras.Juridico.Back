@@ -10,6 +10,11 @@ public interface IClienteRepository
 
     Task<bool> ExisteCuilAsync(string cuil, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyCollection<Cliente>> ObtenerActivosPorIdsAsync(
+        IReadOnlyCollection<long> clienteIds,
+        CancellationToken cancellationToken = default
+    );
+
     Task AgregarAsync(Cliente cliente, CancellationToken cancellationToken = default);
 
     Task GuardarCambiosAsync(CancellationToken cancellationToken = default);

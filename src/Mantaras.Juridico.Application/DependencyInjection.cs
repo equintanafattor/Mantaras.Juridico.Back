@@ -1,4 +1,5 @@
 using FluentValidation;
+using Mantaras.Juridico.Application.Features.Casos.Services;
 using Mantaras.Juridico.Application.Features.Clientes.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,6 +12,7 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
 
         services.AddScoped<IClientesService, ClientesService>();
+        services.AddScoped<ICasosService, CasosService>();
 
         return services;
     }

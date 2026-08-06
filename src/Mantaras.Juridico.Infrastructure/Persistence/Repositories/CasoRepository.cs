@@ -22,6 +22,19 @@ public sealed class CasoRepository : ICasoRepository
             .FirstOrDefaultAsync(x => x.CasoId == casoId, cancellationToken);
     }
 
+    public Task<Caso?> ObtenerDetallePorIdAsync(
+    long casoId,
+    CancellationToken cancellationToken = default
+)
+    {
+        return _dbContext
+            .Casos.AsNoTracking()
+            .Include(x => x.Clientes)
+                .ThenInclude(x => x.Cliente)
+            .Include(x => x.Expedientes)
+            .FirstOrDefaultAsync(x => x.CasoId == casoId, cancellationToken);
+    }
+
     public async Task AgregarAsync(Caso caso, CancellationToken cancellationToken = default)
     {
         await _dbContext.Casos.AddAsync(caso, cancellationToken);

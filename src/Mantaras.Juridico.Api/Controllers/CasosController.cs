@@ -55,14 +55,14 @@ public sealed class CasosController : ControllerBase
 
     [HttpGet("{casoId:long}")]
     [ProducesResponseType(
-        typeof(CasoResponse),
+        typeof(CasoDetalleResponse),
         StatusCodes.Status200OK
     )]
     [ProducesResponseType(
         typeof(ApiErrorResponse),
         StatusCodes.Status404NotFound
     )]
-    public async Task<ActionResult<CasoResponse>> ObtenerPorId(
+    public async Task<ActionResult<CasoDetalleResponse>> ObtenerPorId(
         long casoId,
         CancellationToken cancellationToken
     )
@@ -136,6 +136,54 @@ public sealed class CasosController : ControllerBase
         }
 
         return Ok(result.Value);
+    }
+
+    [HttpDelete("{casoId:long}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(
+    typeof(ApiErrorResponse),
+    StatusCodes.Status404NotFound
+)]
+    public async Task<IActionResult> DarDeBaja(
+    long casoId,
+    CancellationToken cancellationToken
+)
+    {
+        var result = await _casosService.DarDeBajaAsync(
+            casoId,
+            cancellationToken
+        );
+
+        if (result.IsFailure)
+        {
+            return NotFound(CrearErrorResponse(result.Errors));
+        }
+
+        return NoContent();
+    }
+
+    [HttpPatch("{casoId:long}/restaurar")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(
+    typeof(ApiErrorResponse),
+    StatusCodes.Status404NotFound
+)]
+    public async Task<IActionResult> Restaurar(
+    long casoId,
+    CancellationToken cancellationToken
+)
+    {
+        var result = await _casosService.RestaurarAsync(
+            casoId,
+            cancellationToken
+        );
+
+        if (result.IsFailure)
+        {
+            return NotFound(CrearErrorResponse(result.Errors));
+        }
+
+        return NoContent();
     }
 
     private static ApiErrorResponse CrearErrorResponse(

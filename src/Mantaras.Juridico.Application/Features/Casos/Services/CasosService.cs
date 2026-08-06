@@ -76,19 +76,22 @@ public sealed class CasosService : ICasosService
         return Result<CasoResponse>.Success(MapearResponse(caso));
     }
 
-    public async Task<Result<CasoResponse>> ObtenerPorIdAsync(
+    public async Task<Result<CasoDetalleResponse>> ObtenerPorIdAsync(
         long casoId,
         CancellationToken cancellationToken = default
     )
     {
-        var caso = await _casoRepository.ObtenerPorIdAsync(casoId, cancellationToken);
+        var caso = await _casoRepository.ObtenerDetallePorIdAsync(
+            casoId,
+            cancellationToken
+        );
 
         if (caso is null)
         {
-            return Result<CasoResponse>.Failure(CasoErrors.NoEncontrado);
+            return Result<CasoDetalleResponse>.Failure(CasoErrors.NoEncontrado);
         }
 
-        return Result<CasoResponse>.Success(MapearResponse(caso));
+        return Result<CasoDetalleResponse>.Success(MapearDetalleResponse(caso));
     }
 
     public async Task<PagedResponse<CasoResponse>> BuscarAsync(
@@ -198,6 +201,111 @@ public sealed class CasosService : ICasosService
         await _casoRepository.GuardarCambiosAsync(cancellationToken);
 
         return Result<CasoResponse>.Success(MapearResponse(caso));
+    }
+
+    public async Task<Result<bool>> DarDeBajaAsync(
+    long casoId,
+    CancellationToken cancellationToken = default
+)
+    {
+        var caso = await _casoRepository.ObtenerPorIdAsync(
+            casoId,
+            cancellationToken
+        );
+
+        if (caso is null)
+        {
+            return Result<bool>.Failure(CasoErrors.NoEncontrado);
+        }
+
+        if (!caso.Activo)
+        {
+            return Result<bool>.Success(true);
+        }
+
+        caso.Activo = false;
+        caso.FechaModificacion = DateTime.UtcNow;
+        caso.UsuarioModificacion = _currentUser.Usuario;
+
+        await _casoRepository.GuardarCambiosAsync(cancellationToken);
+
+        return Result<bool>.Success(true);
+    }
+
+    public async Task<Result<bool>> RestaurarAsync(
+    long casoId,
+    CancellationToken cancellationToken = default
+)
+    {
+        var caso = await _casoRepository.ObtenerPorIdAsync(
+            casoId,
+            cancellationToken
+        );
+
+        if (caso is null)
+        {
+            return Result<bool>.Failure(CasoErrors.NoEncontrado);
+        }
+
+        if (caso.Activo)
+        {
+            return Result<bool>.Success(true);
+        }
+
+        caso.Activo = true;
+        caso.FechaModificacion = DateTime.UtcNow;
+        caso.UsuarioModificacion = _currentUser.Usuario;
+
+        await _casoRepository.GuardarCambiosAsync(cancellationToken);
+
+        return Result<bool>.Success(true);
+    }
+
+    private static CasoDetalleResponse MapearDetalleResponse(Caso caso)
+    {
+        return new CasoDetalleResponse
+        {
+            CasoId = caso.CasoId,
+            Titulo = caso.Titulo,
+            FaseInterna = caso.FaseInterna,
+            TipoTramite = caso.TipoTramite,
+            Observaciones = caso.Observaciones,
+            Clientes = caso
+                .Clientes.OrderByDescending(x => x.EsPrincipal)
+                .ThenBy(x => x.Cliente.Apellido)
+                .ThenBy(x => x.Cliente.Nombre)
+                .Select(x => new CasoClienteResponse
+                {
+                    ClienteId = x.ClienteId,
+                    Nombre = x.Cliente.Nombre,
+                    Apellido = x.Cliente.Apellido,
+                    NombreCompleto = $"{x.Cliente.Apellido}, {x.Cliente.Nombre}",
+                    Dni = x.Cliente.Dni,
+                    Cuil = x.Cliente.Cuil,
+                    TipoParticipacion = x.TipoParticipacion,
+                    EsPrincipal = x.EsPrincipal,
+                })
+                .ToArray(),
+            Expedientes = caso
+                .Expedientes.OrderBy(x => x.ExpedientePadreId.HasValue)
+                .ThenBy(x => x.FechaInicio)
+                .ThenBy(x => x.Caratula)
+                .Select(x => new ExpedienteCasoDetalleResponse
+                {
+                    ExpedienteId = x.ExpedienteId,
+                    ExpedientePadreId = x.ExpedientePadreId,
+                    NumeroExpediente = x.NumeroExpediente,
+                    Caratula = x.Caratula,
+                    Juzgado = x.Juzgado,
+                    FechaInicio = x.FechaInicio,
+                    EstadoLegal = x.EstadoLegal,
+                    Activo = x.Activo,
+                })
+                .ToArray(),
+            FechaCreacion = caso.FechaCreacion,
+            FechaModificacion = caso.FechaModificacion,
+            Activo = caso.Activo,
+        };
     }
 
     private static CasoResponse MapearResponse(Caso caso)

@@ -12,7 +12,7 @@ public interface ICasosService
         CancellationToken cancellationToken = default
     );
 
-    Task<Result<CasoResponse>> ObtenerPorIdAsync(
+    Task<Result<CasoDetalleResponse>> ObtenerPorIdAsync(
         long casoId,
         CancellationToken cancellationToken = default
     );
@@ -25,6 +25,16 @@ public interface ICasosService
     Task<Result<CasoResponse>> ActualizarAsync(
         long casoId,
         ActualizarCasoRequest request,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<Result<bool>> DarDeBajaAsync(
+        long casoId,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<Result<bool>> RestaurarAsync(
+        long casoId,
         CancellationToken cancellationToken = default
     );
 }

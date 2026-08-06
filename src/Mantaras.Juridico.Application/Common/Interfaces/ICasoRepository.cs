@@ -7,6 +7,11 @@ public interface ICasoRepository
 {
     Task<Caso?> ObtenerPorIdAsync(long casoId, CancellationToken cancellationToken = default);
 
+    Task<Caso?> ObtenerDetallePorIdAsync(
+        long casoId,
+        CancellationToken cancellationToken = default
+    );
+
     Task AgregarAsync(Caso caso, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyCollection<Caso>> BuscarAsync(

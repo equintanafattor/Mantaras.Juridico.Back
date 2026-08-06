@@ -43,5 +43,9 @@ public class ExpedienteConfiguration : IEntityTypeConfiguration<Expediente>
         builder.Property(x => x.UsuarioCreacion).HasMaxLength(100);
 
         builder.Property(x => x.UsuarioModificacion).HasMaxLength(100);
-    }
+
+        builder
+            .Property(x => x.FechaInicio)
+            .HasColumnType("date");
+        }
 }

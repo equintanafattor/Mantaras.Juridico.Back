@@ -17,7 +17,7 @@ public class Expediente : AuditableEntity
 
     public string? Juzgado { get; set; }
 
-    public DateTime? FechaInicio { get; set; }
+    public DateOnly? FechaInicio { get; set; }
 
     public string? EstadoLegal { get; set; }
 

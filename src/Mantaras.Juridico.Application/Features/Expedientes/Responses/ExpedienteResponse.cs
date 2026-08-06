@@ -1,8 +1,12 @@
-namespace Mantaras.Juridico.Application.Features.Casos.Responses;
+namespace Mantaras.Juridico.Application.Features.Expedientes.Responses;
 
-public sealed class ExpedienteCasoDetalleResponse
+public sealed class ExpedienteResponse
 {
     public long ExpedienteId { get; set; }
+
+    public long CasoId { get; set; }
+
+    public string TituloCaso { get; set; } = string.Empty;
 
     public long? ExpedientePadreId { get; set; }
 
@@ -15,6 +19,10 @@ public sealed class ExpedienteCasoDetalleResponse
     public DateOnly? FechaInicio { get; set; }
 
     public string? EstadoLegal { get; set; }
+
+    public DateTime FechaCreacion { get; set; }
+
+    public DateTime? FechaModificacion { get; set; }
 
     public bool Activo { get; set; }
 }

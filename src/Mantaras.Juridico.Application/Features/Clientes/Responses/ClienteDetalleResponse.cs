@@ -1,6 +1,6 @@
 namespace Mantaras.Juridico.Application.Features.Clientes.Responses;
 
-public class ClienteResponse
+public sealed class ClienteDetalleResponse
 {
     public long ClienteId { get; set; }
 
@@ -30,5 +30,10 @@ public class ClienteResponse
 
     public DateTime FechaCreacion { get; set; }
 
+    public DateTime? FechaModificacion { get; set; }
+
     public bool Activo { get; set; }
+
+    public IReadOnlyCollection<CasoClienteDetalleResponse> Casos { get; set; } =
+        Array.Empty<CasoClienteDetalleResponse>();
 }

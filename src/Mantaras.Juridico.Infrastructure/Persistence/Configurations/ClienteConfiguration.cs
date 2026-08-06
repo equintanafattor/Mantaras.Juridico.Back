@@ -37,6 +37,8 @@ public class ClienteConfiguration : IEntityTypeConfiguration<Cliente>
         builder.Property(x => x.Observaciones).HasMaxLength(2000);
 
         builder.Property(x => x.FechaCreacion).IsRequired();
+        
+        builder.Property(cliente => cliente.FechaNacimiento).HasColumnType("date");
 
         builder.Property(x => x.UsuarioCreacion).HasMaxLength(100);
 

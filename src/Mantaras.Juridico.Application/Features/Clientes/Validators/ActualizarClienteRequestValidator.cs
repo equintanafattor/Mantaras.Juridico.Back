@@ -3,9 +3,9 @@ using Mantaras.Juridico.Application.Features.Clientes.Requests;
 
 namespace Mantaras.Juridico.Application.Features.Clientes.Validators;
 
-public class CrearClienteRequestValidator : AbstractValidator<CrearClienteRequest>
+public sealed class ActualizarClienteRequestValidator : AbstractValidator<ActualizarClienteRequest>
 {
-    public CrearClienteRequestValidator()
+    public ActualizarClienteRequestValidator()
     {
         RuleFor(x => x.Nombre)
             .NotEmpty()

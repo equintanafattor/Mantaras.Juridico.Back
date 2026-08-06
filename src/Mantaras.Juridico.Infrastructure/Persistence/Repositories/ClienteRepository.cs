@@ -24,14 +24,46 @@ public class ClienteRepository : IClienteRepository
         );
     }
 
-    public Task<bool> ExisteDniAsync(string dni, CancellationToken cancellationToken = default)
+    public Task<Cliente?> ObtenerDetallePorIdAsync(
+        long clienteId,
+        CancellationToken cancellationToken = default
+    )
     {
-        return _dbContext.Clientes.AnyAsync(x => x.Dni == dni, cancellationToken);
+        return _dbContext
+            .Clientes.AsNoTracking()
+            .AsSplitQuery()
+            .Include(cliente => cliente.Casos)
+                .ThenInclude(casoCliente => casoCliente.Caso)
+                    .ThenInclude(caso => caso.Expedientes)
+            .FirstOrDefaultAsync(cliente => cliente.ClienteId == clienteId, cancellationToken);
     }
 
-    public Task<bool> ExisteCuilAsync(string cuil, CancellationToken cancellationToken = default)
+    public Task<bool> ExisteDniAsync(
+        string dni,
+        long? clienteIdExcluir = null,
+        CancellationToken cancellationToken = default
+    )
     {
-        return _dbContext.Clientes.AnyAsync(x => x.Cuil == cuil, cancellationToken);
+        return _dbContext.Clientes.AnyAsync(
+            cliente =>
+                cliente.Dni == dni
+                && (!clienteIdExcluir.HasValue || cliente.ClienteId != clienteIdExcluir.Value),
+            cancellationToken
+        );
+    }
+
+    public Task<bool> ExisteCuilAsync(
+        string cuil,
+        long? clienteIdExcluir = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return _dbContext.Clientes.AnyAsync(
+            cliente =>
+                cliente.Cuil == cuil
+                && (!clienteIdExcluir.HasValue || cliente.ClienteId != clienteIdExcluir.Value),
+            cancellationToken
+        );
     }
 
     public async Task AgregarAsync(Cliente cliente, CancellationToken cancellationToken = default)

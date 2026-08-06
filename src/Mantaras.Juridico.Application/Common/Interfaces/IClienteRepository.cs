@@ -6,9 +6,22 @@ public interface IClienteRepository
 {
     Task<Cliente?> ObtenerPorIdAsync(long clienteId, CancellationToken cancellationToken = default);
 
-    Task<bool> ExisteDniAsync(string dni, CancellationToken cancellationToken = default);
+    Task<Cliente?> ObtenerDetallePorIdAsync(
+        long clienteId,
+        CancellationToken cancellationToken = default
+    );
 
-    Task<bool> ExisteCuilAsync(string cuil, CancellationToken cancellationToken = default);
+    Task<bool> ExisteDniAsync(
+        string dni,
+        long? clienteIdExcluir = null,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<bool> ExisteCuilAsync(
+        string cuil,
+        long? clienteIdExcluir = null,
+        CancellationToken cancellationToken = default
+    );
 
     Task<IReadOnlyCollection<Cliente>> ObtenerActivosPorIdsAsync(
         IReadOnlyCollection<long> clienteIds,

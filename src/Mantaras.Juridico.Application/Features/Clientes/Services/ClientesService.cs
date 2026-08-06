@@ -10,7 +10,6 @@ namespace Mantaras.Juridico.Application.Features.Clientes.Services;
 public class ClientesService : IClientesService
 {
     private readonly IClienteRepository _clienteRepository;
-
     private readonly ICurrentUserService _currentUser;
 
     public ClientesService(IClienteRepository clienteRepository, ICurrentUserService currentUser)
@@ -24,25 +23,29 @@ public class ClientesService : IClientesService
         CancellationToken cancellationToken = default
     )
     {
-        var nombre = request.Nombre.Trim();
-        var apellido = request.Apellido.Trim();
-        var dni = NormalizarOpcional(request.Dni);
-        var cuil = NormalizarOpcional(request.Cuil);
+        var dni = NormalizarDocumento(request.Dni);
+        var cuil = NormalizarDocumento(request.Cuil);
 
-        if (dni is not null && await _clienteRepository.ExisteDniAsync(dni, cancellationToken))
+        if (
+            dni is not null
+            && await _clienteRepository.ExisteDniAsync(dni, cancellationToken: cancellationToken)
+        )
         {
             return Result<ClienteResponse>.Failure(ClienteErrors.DniDuplicado);
         }
 
-        if (cuil is not null && await _clienteRepository.ExisteCuilAsync(cuil, cancellationToken))
+        if (
+            cuil is not null
+            && await _clienteRepository.ExisteCuilAsync(cuil, cancellationToken: cancellationToken)
+        )
         {
             return Result<ClienteResponse>.Failure(ClienteErrors.CuilDuplicado);
         }
 
         var cliente = new Cliente
         {
-            Nombre = nombre,
-            Apellido = apellido,
+            Nombre = request.Nombre.Trim(),
+            Apellido = request.Apellido.Trim(),
             Dni = dni,
             Cuil = cuil,
             ClaveSeguridadSocial = NormalizarOpcional(request.ClaveSeguridadSocial),
@@ -59,12 +62,116 @@ public class ClientesService : IClientesService
         };
 
         await _clienteRepository.AgregarAsync(cliente, cancellationToken);
+        await _clienteRepository.GuardarCambiosAsync(cancellationToken);
+
+        return Result<ClienteResponse>.Success(MapearResponse(cliente));
+    }
+
+    public async Task<Result<ClienteDetalleResponse>> ObtenerPorIdAsync(
+        long clienteId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var cliente = await _clienteRepository.ObtenerDetallePorIdAsync(
+            clienteId,
+            cancellationToken
+        );
+
+        if (cliente is null)
+        {
+            return Result<ClienteDetalleResponse>.Failure(ClienteErrors.NoEncontrado);
+        }
+
+        return Result<ClienteDetalleResponse>.Success(MapearDetalleResponse(cliente));
+    }
+
+    public async Task<Result<ClienteDetalleResponse>> ActualizarAsync(
+        long clienteId,
+        ActualizarClienteRequest request,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var cliente = await _clienteRepository.ObtenerPorIdAsync(clienteId, cancellationToken);
+
+        if (cliente is null)
+        {
+            return Result<ClienteDetalleResponse>.Failure(ClienteErrors.NoEncontrado);
+        }
+
+        var dni = NormalizarDocumento(request.Dni);
+        var cuil = NormalizarDocumento(request.Cuil);
+
+        if (
+            dni is not null
+            && await _clienteRepository.ExisteDniAsync(dni, clienteId, cancellationToken)
+        )
+        {
+            return Result<ClienteDetalleResponse>.Failure(ClienteErrors.DniDuplicado);
+        }
+
+        if (
+            cuil is not null
+            && await _clienteRepository.ExisteCuilAsync(cuil, clienteId, cancellationToken)
+        )
+        {
+            return Result<ClienteDetalleResponse>.Failure(ClienteErrors.CuilDuplicado);
+        }
+
+        cliente.Nombre = request.Nombre.Trim();
+        cliente.Apellido = request.Apellido.Trim();
+        cliente.Dni = dni;
+        cliente.Cuil = cuil;
+        var nuevaClaveSeguridadSocial = NormalizarOpcional(request.ClaveSeguridadSocial);
+
+        if (nuevaClaveSeguridadSocial is not null)
+        {
+            cliente.ClaveSeguridadSocial = nuevaClaveSeguridadSocial;
+        }
+        cliente.FechaNacimiento = request.FechaNacimiento;
+        cliente.Telefono = NormalizarOpcional(request.Telefono);
+        cliente.Email = NormalizarOpcional(request.Email);
+        cliente.Domicilio = NormalizarOpcional(request.Domicilio);
+        cliente.Localidad = NormalizarOpcional(request.Localidad);
+        cliente.Provincia = NormalizarOpcional(request.Provincia);
+        cliente.Observaciones = NormalizarOpcional(request.Observaciones);
+        cliente.FechaModificacion = DateTime.UtcNow;
+        cliente.UsuarioModificacion = _currentUser.Usuario;
 
         await _clienteRepository.GuardarCambiosAsync(cancellationToken);
 
-        var response = MapearResponse(cliente);
+        var clienteActualizado = await _clienteRepository.ObtenerDetallePorIdAsync(
+            clienteId,
+            cancellationToken
+        );
 
-        return Result<ClienteResponse>.Success(response);
+        return Result<ClienteDetalleResponse>.Success(MapearDetalleResponse(clienteActualizado!));
+    }
+
+    public async Task<Result<bool>> DarDeBajaAsync(
+        long clienteId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var cliente = await _clienteRepository.ObtenerPorIdAsync(clienteId, cancellationToken);
+
+        if (cliente is null)
+        {
+            return Result<bool>.Failure(ClienteErrors.NoEncontrado);
+        }
+
+        // La operación es idempotente: dar de baja dos veces no produce error.
+        if (!cliente.Activo)
+        {
+            return Result<bool>.Success(true);
+        }
+
+        cliente.Activo = false;
+        cliente.FechaModificacion = DateTime.UtcNow;
+        cliente.UsuarioModificacion = _currentUser.Usuario;
+
+        await _clienteRepository.GuardarCambiosAsync(cancellationToken);
+
+        return Result<bool>.Success(true);
     }
 
     public async Task<PagedResponse<ClienteResponse>> BuscarAsync(
@@ -86,11 +193,9 @@ public class ClientesService : IClientesService
             cancellationToken
         );
 
-        var items = clientes.Select(MapearResponse).ToArray();
-
         return new PagedResponse<ClienteResponse>
         {
-            Items = items,
+            Items = clientes.Select(MapearResponse).ToArray(),
             Page = request.Page,
             PageSize = request.PageSize,
             TotalItems = totalItems,
@@ -114,14 +219,77 @@ public class ClientesService : IClientesService
             Localidad = cliente.Localidad,
             Provincia = cliente.Provincia,
             Observaciones = cliente.Observaciones,
-            ClaveSeguridadSocial = cliente.ClaveSeguridadSocial,
             FechaCreacion = cliente.FechaCreacion,
             Activo = cliente.Activo,
+        };
+    }
+
+    private static ClienteDetalleResponse MapearDetalleResponse(Cliente cliente)
+    {
+        return new ClienteDetalleResponse
+        {
+            ClienteId = cliente.ClienteId,
+            Nombre = cliente.Nombre,
+            Apellido = cliente.Apellido,
+            NombreCompleto = $"{cliente.Apellido}, {cliente.Nombre}",
+            Dni = cliente.Dni,
+            Cuil = cliente.Cuil,
+            FechaNacimiento = cliente.FechaNacimiento,
+            Telefono = cliente.Telefono,
+            Email = cliente.Email,
+            Domicilio = cliente.Domicilio,
+            Localidad = cliente.Localidad,
+            Provincia = cliente.Provincia,
+            Observaciones = cliente.Observaciones,
+            FechaCreacion = cliente.FechaCreacion,
+            FechaModificacion = cliente.FechaModificacion,
+            Activo = cliente.Activo,
+            Casos = cliente
+                .Casos.OrderByDescending(casoCliente => casoCliente.Caso.FechaCreacion)
+                .Select(casoCliente => new CasoClienteDetalleResponse
+                {
+                    CasoId = casoCliente.CasoId,
+                    Titulo = casoCliente.Caso.Titulo,
+                    FaseInterna = casoCliente.Caso.FaseInterna,
+                    TipoTramite = casoCliente.Caso.TipoTramite,
+                    Observaciones = casoCliente.Caso.Observaciones,
+                    TipoParticipacion = casoCliente.TipoParticipacion,
+                    EsPrincipal = casoCliente.EsPrincipal,
+                    Activo = casoCliente.Caso.Activo,
+                    Expedientes = casoCliente
+                        .Caso.Expedientes.OrderBy(expediente => expediente.FechaInicio)
+                        .ThenBy(expediente => expediente.ExpedienteId)
+                        .Select(expediente => new ExpedienteClienteDetalleResponse
+                        {
+                            ExpedienteId = expediente.ExpedienteId,
+                            ExpedientePadreId = expediente.ExpedientePadreId,
+                            NumeroExpediente = expediente.NumeroExpediente,
+                            Caratula = expediente.Caratula,
+                            Juzgado = expediente.Juzgado,
+                            FechaInicio = expediente.FechaInicio,
+                            EstadoLegal = expediente.EstadoLegal,
+                            Activo = expediente.Activo,
+                        })
+                        .ToArray(),
+                })
+                .ToArray(),
         };
     }
 
     private static string? NormalizarOpcional(string? valor)
     {
         return string.IsNullOrWhiteSpace(valor) ? null : valor.Trim();
+    }
+
+    private static string? NormalizarDocumento(string? valor)
+    {
+        if (string.IsNullOrWhiteSpace(valor))
+        {
+            return null;
+        }
+
+        var numeros = new string(valor.Where(char.IsDigit).ToArray());
+
+        return string.IsNullOrEmpty(numeros) ? null : numeros;
     }
 }

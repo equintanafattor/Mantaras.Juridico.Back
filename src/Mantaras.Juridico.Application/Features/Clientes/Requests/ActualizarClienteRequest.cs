@@ -1,18 +1,16 @@
-namespace Mantaras.Juridico.Application.Features.Clientes.Responses;
+namespace Mantaras.Juridico.Application.Features.Clientes.Requests;
 
-public class ClienteResponse
+public sealed class ActualizarClienteRequest
 {
-    public long ClienteId { get; set; }
-
     public string Nombre { get; set; } = string.Empty;
 
     public string Apellido { get; set; } = string.Empty;
 
-    public string NombreCompleto { get; set; } = string.Empty;
-
     public string? Dni { get; set; }
 
     public string? Cuil { get; set; }
+
+    public string? ClaveSeguridadSocial { get; set; }
 
     public DateTime? FechaNacimiento { get; set; }
 
@@ -27,8 +25,4 @@ public class ClienteResponse
     public string? Provincia { get; set; }
 
     public string? Observaciones { get; set; }
-
-    public DateTime FechaCreacion { get; set; }
-
-    public bool Activo { get; set; }
 }

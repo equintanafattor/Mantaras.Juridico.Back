@@ -104,6 +104,27 @@ public class ClientesController : ControllerBase
         return NoContent();
     }
 
+    [HttpPatch("{clienteId:long}/reactivar")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Reactivar(
+    long clienteId,
+    CancellationToken cancellationToken
+)
+    {
+        var result = await _clientesService.ReactivarAsync(
+            clienteId,
+            cancellationToken
+        );
+
+        if (result.IsFailure)
+        {
+            return NotFound(CrearErrorResponse(result.Errors));
+        }
+
+        return NoContent();
+    }
+
     [HttpGet]
     [ProducesResponseType(typeof(PagedResponse<ClienteResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResponse<ClienteResponse>>> Buscar(

@@ -28,6 +28,11 @@ public interface IClientesService
         CancellationToken cancellationToken = default
     );
 
+    Task<Result<bool>> ReactivarAsync(
+        long clienteId,
+        CancellationToken cancellationToken = default
+    );
+
     Task<PagedResponse<ClienteResponse>> BuscarAsync(
         BuscarClientesRequest request,
         CancellationToken cancellationToken = default

@@ -174,6 +174,36 @@ public class ClientesService : IClientesService
         return Result<bool>.Success(true);
     }
 
+    public async Task<Result<bool>> ReactivarAsync(
+    long clienteId,
+    CancellationToken cancellationToken = default
+)
+    {
+        var cliente = await _clienteRepository.ObtenerPorIdAsync(
+            clienteId,
+            cancellationToken
+        );
+
+        if (cliente is null)
+        {
+            return Result<bool>.Failure(ClienteErrors.NoEncontrado);
+        }
+
+        // La operación es idempotente: reactivar un cliente activo no produce error.
+        if (cliente.Activo)
+        {
+            return Result<bool>.Success(true);
+        }
+
+        cliente.Activo = true;
+        cliente.FechaModificacion = DateTime.UtcNow;
+        cliente.UsuarioModificacion = _currentUser.Usuario;
+
+        await _clienteRepository.GuardarCambiosAsync(cancellationToken);
+
+        return Result<bool>.Success(true);
+    }
+
     public async Task<PagedResponse<ClienteResponse>> BuscarAsync(
         BuscarClientesRequest request,
         CancellationToken cancellationToken = default

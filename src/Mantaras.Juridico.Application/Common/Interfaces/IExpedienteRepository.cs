@@ -38,4 +38,15 @@ public interface IExpedienteRepository
     Task GuardarCambiosAsync(
         CancellationToken cancellationToken = default
     );
+
+    Task<bool> TieneDerivadosActivosAsync(
+        long expedienteId,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<bool> ExistePrincipalAsync(
+        long casoId,
+        long? expedienteIdExcluir = null,
+        CancellationToken cancellationToken = default
+    );
 }

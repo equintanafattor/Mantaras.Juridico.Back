@@ -33,4 +33,14 @@ public static class ExpedienteErrors
         "Expedientes.JerarquiaCiclica",
         "La relación informada produciría un ciclo en la jerarquía de expedientes."
     );
+
+    public static readonly Error DerivadosActivos = new(
+        "Expedientes.DerivadosActivos",
+        "No se puede dar de baja el expediente porque tiene expedientes derivados activos."
+    );
+
+    public static readonly Error PrincipalDuplicado = new(
+        "Expedientes.PrincipalDuplicado",
+        "El caso ya tiene un expediente principal."
+    );
 }

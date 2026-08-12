@@ -1,3 +1,5 @@
+using Mantaras.Juridico.Domain.Enums;
+
 namespace Mantaras.Juridico.Application.Features.Expedientes.Responses;
 
 public sealed class ExpedienteResponse
@@ -9,6 +11,8 @@ public sealed class ExpedienteResponse
     public string TituloCaso { get; set; } = string.Empty;
 
     public long? ExpedientePadreId { get; set; }
+
+    public TipoExpediente TipoExpediente { get; set; }
 
     public string? NumeroExpediente { get; set; }
 

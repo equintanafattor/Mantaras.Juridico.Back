@@ -3,6 +3,7 @@ using System;
 using Mantaras.Juridico.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(JuridicoDbContext))]
-    partial class JuridicoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260812145058_AddTipoExpediente")]
+    partial class AddTipoExpediente
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -253,10 +256,6 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                     b.HasIndex("ExpedientePadreId");
 
                     b.HasIndex("NumeroExpediente");
-
-                    b.HasIndex(new[] { "CasoId" }, "IX_Expedientes_CasoId_Principal")
-                        .IsUnique()
-                        .HasFilter("\"TipoExpediente\" = 1");
 
                     b.ToTable("Expedientes", (string)null);
                 });

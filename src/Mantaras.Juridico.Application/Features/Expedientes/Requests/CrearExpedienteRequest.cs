@@ -1,3 +1,5 @@
+using Mantaras.Juridico.Domain.Enums;
+
 namespace Mantaras.Juridico.Application.Features.Expedientes.Requests;
 
 public sealed class CrearExpedienteRequest
@@ -5,6 +7,8 @@ public sealed class CrearExpedienteRequest
     public long CasoId { get; set; }
 
     public long? ExpedientePadreId { get; set; }
+    
+    public TipoExpediente TipoExpediente { get; set; }
 
     public string? NumeroExpediente { get; set; }
 

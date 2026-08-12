@@ -203,9 +203,9 @@ public sealed class CasosService : ICasosService
     }
 
     public async Task<Result<bool>> DarDeBajaAsync(
-    long casoId,
-    CancellationToken cancellationToken = default
-)
+        long casoId,
+        CancellationToken cancellationToken = default
+    )
     {
         var caso = await _casoRepository.ObtenerPorIdAsync(
             casoId,
@@ -220,6 +220,17 @@ public sealed class CasosService : ICasosService
         if (!caso.Activo)
         {
             return Result<bool>.Success(true);
+        }
+
+        var tieneExpedientesActivos =
+        await _casoRepository.TieneExpedientesActivosAsync(
+            casoId,
+            cancellationToken
+        );
+
+        if (tieneExpedientesActivos)
+        {
+            return Result<bool>.Failure(CasoErrors.ExpedientesActivos);
         }
 
         caso.Activo = false;
@@ -292,6 +303,7 @@ public sealed class CasosService : ICasosService
                 .Select(x => new ExpedienteCasoDetalleResponse
                 {
                     ExpedienteId = x.ExpedienteId,
+                    TipoExpediente = x.TipoExpediente,
                     ExpedientePadreId = x.ExpedientePadreId,
                     NumeroExpediente = x.NumeroExpediente,
                     Caratula = x.Caratula,

@@ -1,5 +1,6 @@
 using FluentValidation;
 using Mantaras.Juridico.Application.Features.Expedientes.Requests;
+using Mantaras.Juridico.Domain.Enums;
 
 namespace Mantaras.Juridico.Application.Features.Expedientes.Validators;
 
@@ -12,6 +13,42 @@ public sealed class ActualizarExpedienteRequestValidator
             .GreaterThan(0)
             .When(x => x.ExpedientePadreId.HasValue)
             .WithMessage("El expediente padre informado no es válido.");
+
+        RuleFor(x => x.TipoExpediente)
+            .IsInEnum()
+            .WithMessage("El tipo de expediente informado no es válido.");
+
+        RuleFor(x => x)
+            .Must(x =>
+                !Enum.IsDefined(
+                    typeof(TipoExpediente),
+                    x.TipoExpediente
+                )
+                || x.TipoExpediente != TipoExpediente.Principal
+                || !x.ExpedientePadreId.HasValue
+            )
+            .WithMessage(
+                "Un expediente principal no puede tener expediente padre."
+            )
+            .OverridePropertyName(
+                nameof(ActualizarExpedienteRequest.TipoExpediente)
+            );
+
+        RuleFor(x => x)
+            .Must(x =>
+                !Enum.IsDefined(
+                    typeof(TipoExpediente),
+                    x.TipoExpediente
+                )
+                || x.TipoExpediente == TipoExpediente.Principal
+                || x.ExpedientePadreId.HasValue
+            )
+            .WithMessage(
+                "Los incidentes, apelaciones y ejecuciones deben tener un expediente padre."
+            )
+            .OverridePropertyName(
+                nameof(ActualizarExpedienteRequest.TipoExpediente)
+            );
 
         RuleFor(x => x.NumeroExpediente)
             .MaximumLength(100)

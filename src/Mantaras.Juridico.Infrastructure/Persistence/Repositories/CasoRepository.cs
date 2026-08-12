@@ -72,6 +72,17 @@ public sealed class CasoRepository : ICasoRepository
         return ConstruirConsulta(busqueda, faseInterna, soloActivos).CountAsync(cancellationToken);
     }
 
+    public Task<bool> TieneExpedientesActivosAsync(
+        long casoId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return _dbContext.Expedientes.AnyAsync(
+            x => x.CasoId == casoId && x.Activo,
+            cancellationToken
+        );
+    }
+
     public Task GuardarCambiosAsync(CancellationToken cancellationToken = default)
     {
         return _dbContext.SaveChangesAsync(cancellationToken);

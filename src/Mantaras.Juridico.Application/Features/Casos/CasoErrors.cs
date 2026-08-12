@@ -13,4 +13,9 @@ public static class CasoErrors
         "Casos.ClientesNoEncontrados",
         "Uno o más clientes informados no existen o están inactivos."
     );
+
+    public static readonly Error ExpedientesActivos = new(
+        "Casos.ExpedientesActivos",
+        "No se puede dar de baja el caso porque tiene expedientes activos."
+    );
 }

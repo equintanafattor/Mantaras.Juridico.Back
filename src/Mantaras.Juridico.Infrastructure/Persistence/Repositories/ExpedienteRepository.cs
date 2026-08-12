@@ -1,5 +1,6 @@
 using Mantaras.Juridico.Application.Common.Interfaces;
 using Mantaras.Juridico.Domain.Entities;
+using Mantaras.Juridico.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Mantaras.Juridico.Infrastructure.Persistence.Repositories;
@@ -90,6 +91,37 @@ public sealed class ExpedienteRepository : IExpedienteRepository
             busqueda,
             soloActivos
         ).CountAsync(cancellationToken);
+    }
+
+    public Task<bool> TieneDerivadosActivosAsync(
+        long expedienteId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return _dbContext.Expedientes.AnyAsync(
+            x =>
+                x.ExpedientePadreId == expedienteId
+                && x.Activo,
+            cancellationToken
+        );
+    }
+
+    public Task<bool> ExistePrincipalAsync(
+        long casoId,
+        long? expedienteIdExcluir = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return _dbContext.Expedientes.AnyAsync(
+            x =>
+                x.CasoId == casoId
+                && x.TipoExpediente == TipoExpediente.Principal
+                && (
+                    !expedienteIdExcluir.HasValue
+                    || x.ExpedienteId != expedienteIdExcluir.Value
+                ),
+            cancellationToken
+        );
     }
 
     public Task GuardarCambiosAsync(

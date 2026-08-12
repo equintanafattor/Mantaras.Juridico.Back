@@ -31,4 +31,9 @@ public interface ICasoRepository
     );
 
     Task GuardarCambiosAsync(CancellationToken cancellationToken = default);
+
+    Task<bool> TieneExpedientesActivosAsync(
+        long casoId,
+        CancellationToken cancellationToken = default
+    );
 }

@@ -149,6 +149,10 @@ public sealed class ExpedientesController : ControllerBase
         typeof(ApiErrorResponse),
         StatusCodes.Status404NotFound
     )]
+    [ProducesResponseType(
+        typeof(ApiErrorResponse),
+        StatusCodes.Status400BadRequest
+    )]
     public async Task<IActionResult> DarDeBaja(
         long expedienteId,
         CancellationToken cancellationToken
@@ -161,7 +165,17 @@ public sealed class ExpedientesController : ControllerBase
 
         if (result.IsFailure)
         {
-            return NotFound(CrearErrorResponse(result.Errors));
+            var errorResponse = CrearErrorResponse(result.Errors);
+
+            if (ContieneError(
+                result.Errors,
+                ExpedienteErrors.NoEncontrado
+            ))
+            {
+                return NotFound(errorResponse);
+            }
+
+            return BadRequest(errorResponse);
         }
 
         return NoContent();

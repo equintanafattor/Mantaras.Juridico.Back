@@ -143,11 +143,15 @@ public sealed class CasosController : ControllerBase
     [ProducesResponseType(
     typeof(ApiErrorResponse),
     StatusCodes.Status404NotFound
-)]
+    )]
+    [ProducesResponseType(
+    typeof(ApiErrorResponse),
+    StatusCodes.Status400BadRequest
+    )]
     public async Task<IActionResult> DarDeBaja(
-    long casoId,
-    CancellationToken cancellationToken
-)
+        long casoId,
+        CancellationToken cancellationToken
+    )
     {
         var result = await _casosService.DarDeBajaAsync(
             casoId,
@@ -156,7 +160,16 @@ public sealed class CasosController : ControllerBase
 
         if (result.IsFailure)
         {
-            return NotFound(CrearErrorResponse(result.Errors));
+            var errorResponse = CrearErrorResponse(result.Errors);
+
+            if (result.Errors.Any(
+                x => x.Code == CasoErrors.NoEncontrado.Code
+            ))
+            {
+                return NotFound(errorResponse);
+            }
+
+            return BadRequest(errorResponse);
         }
 
         return NoContent();

@@ -4,6 +4,7 @@ using Mantaras.Juridico.Application.Common.Results;
 using Mantaras.Juridico.Application.Features.Expedientes.Requests;
 using Mantaras.Juridico.Application.Features.Expedientes.Responses;
 using Mantaras.Juridico.Domain.Entities;
+using Mantaras.Juridico.Domain.Enums;
 
 namespace Mantaras.Juridico.Application.Features.Expedientes.Services;
 
@@ -41,6 +42,22 @@ public sealed class ExpedientesService : IExpedientesService
             );
         }
 
+        if (request.TipoExpediente == TipoExpediente.Principal)
+        {
+            var existePrincipal =
+                await _expedienteRepository.ExistePrincipalAsync(
+                    request.CasoId,
+                    cancellationToken: cancellationToken
+                );
+
+            if (existePrincipal)
+            {
+                return Result<ExpedienteResponse>.Failure(
+                    ExpedienteErrors.PrincipalDuplicado
+                );
+            }
+        }
+
         Expediente? expedientePadre = null;
 
         if (request.ExpedientePadreId.HasValue)
@@ -69,6 +86,7 @@ public sealed class ExpedientesService : IExpedientesService
         {
             CasoId = caso.CasoId,
             ExpedientePadreId = expedientePadre?.ExpedienteId,
+            TipoExpediente = request.TipoExpediente,
             NumeroExpediente = NormalizarOpcional(request.NumeroExpediente),
             Caratula = request.Caratula.Trim(),
             Juzgado = NormalizarOpcional(request.Juzgado),
@@ -165,6 +183,23 @@ public sealed class ExpedientesService : IExpedientesService
             );
         }
 
+        if (request.TipoExpediente == TipoExpediente.Principal)
+        {
+            var existeOtroPrincipal =
+                await _expedienteRepository.ExistePrincipalAsync(
+                    expediente.CasoId,
+                    expedienteId,
+                    cancellationToken
+                );
+
+            if (existeOtroPrincipal)
+            {
+                return Result<ExpedienteResponse>.Failure(
+                    ExpedienteErrors.PrincipalDuplicado
+                );
+            }
+        }
+
         if (request.ExpedientePadreId == expedienteId)
         {
             return Result<ExpedienteResponse>.Failure(
@@ -211,6 +246,7 @@ public sealed class ExpedientesService : IExpedientesService
 
         expediente.ExpedientePadreId = expedientePadre?.ExpedienteId;
         expediente.ExpedientePadre = expedientePadre;
+        expediente.TipoExpediente = request.TipoExpediente;
         expediente.NumeroExpediente = NormalizarOpcional(
             request.NumeroExpediente
         );
@@ -250,6 +286,19 @@ public sealed class ExpedientesService : IExpedientesService
         if (!expediente.Activo)
         {
             return Result<bool>.Success(true);
+        }
+
+        var tieneDerivadosActivos =
+        await _expedienteRepository.TieneDerivadosActivosAsync(
+            expedienteId,
+            cancellationToken
+        );
+
+        if (tieneDerivadosActivos)
+        {
+            return Result<bool>.Failure(
+                ExpedienteErrors.DerivadosActivos
+            );
         }
 
         expediente.Activo = false;
@@ -372,6 +421,7 @@ public sealed class ExpedientesService : IExpedientesService
             CasoId = expediente.CasoId,
             TituloCaso = expediente.Caso.Titulo,
             ExpedientePadreId = expediente.ExpedientePadreId,
+            TipoExpediente = expediente.TipoExpediente,
             NumeroExpediente = expediente.NumeroExpediente,
             Caratula = expediente.Caratula,
             Juzgado = expediente.Juzgado,
@@ -402,6 +452,7 @@ public sealed class ExpedientesService : IExpedientesService
             CasoId = expediente.CasoId,
             TituloCaso = expediente.Caso.Titulo,
             ExpedientePadreId = expediente.ExpedientePadreId,
+            TipoExpediente = expediente.TipoExpediente,
             NumeroExpediente = expediente.NumeroExpediente,
             Caratula = expediente.Caratula,
             Juzgado = expediente.Juzgado,
@@ -420,6 +471,7 @@ public sealed class ExpedientesService : IExpedientesService
         return new ExpedienteRelacionadoResponse
         {
             ExpedienteId = expediente.ExpedienteId,
+            TipoExpediente = expediente.TipoExpediente,
             NumeroExpediente = expediente.NumeroExpediente,
             Caratula = expediente.Caratula,
             Activo = expediente.Activo,

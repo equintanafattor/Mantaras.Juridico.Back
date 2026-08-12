@@ -1,4 +1,5 @@
 using Mantaras.Juridico.Domain.Entities;
+using Mantaras.Juridico.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -29,6 +30,19 @@ public class ExpedienteConfiguration : IEntityTypeConfiguration<Expediente>
         builder.HasIndex(x => x.ExpedientePadreId);
 
         builder
+            .HasIndex(
+                x => x.CasoId,
+                "IX_Expedientes_CasoId_Principal"
+            )
+            .IsUnique()
+            .HasFilter("\"TipoExpediente\" = 1");
+
+        builder
+            .Property(x => x.TipoExpediente)
+            .HasConversion<int>()
+            .HasDefaultValue(TipoExpediente.Principal);
+
+        builder
             .HasOne(x => x.Caso)
             .WithMany(x => x.Expedientes)
             .HasForeignKey(x => x.CasoId)
@@ -47,5 +61,5 @@ public class ExpedienteConfiguration : IEntityTypeConfiguration<Expediente>
         builder
             .Property(x => x.FechaInicio)
             .HasColumnType("date");
-        }
+    }
 }

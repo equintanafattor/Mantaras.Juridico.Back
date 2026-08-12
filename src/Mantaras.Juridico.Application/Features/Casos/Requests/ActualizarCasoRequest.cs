@@ -12,8 +12,6 @@ public sealed class ActualizarCasoRequest
 
     public string? Observaciones { get; set; }
 
-    public bool Activo { get; set; } = true;
-
     public IReadOnlyCollection<CasoClienteRequest> Clientes { get; set; } =
         Array.Empty<CasoClienteRequest>();
 }

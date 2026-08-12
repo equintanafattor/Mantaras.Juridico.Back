@@ -26,6 +26,7 @@ public sealed class ActualizarCasoRequestValidator : AbstractValidator<Actualiza
             .WithMessage("Las observaciones no pueden superar los 2000 caracteres.");
 
         RuleFor(x => x.Clientes)
+            .Cascade(CascadeMode.Stop)
             .NotEmpty()
             .WithMessage("El caso debe tener al menos un cliente.")
             .Must(TenerClientesUnicos)
@@ -36,13 +37,19 @@ public sealed class ActualizarCasoRequestValidator : AbstractValidator<Actualiza
         RuleForEach(x => x.Clientes).SetValidator(new CasoClienteRequestValidator());
     }
 
-    private static bool TenerClientesUnicos(IReadOnlyCollection<CasoClienteRequest> clientes)
+    private static bool TenerClientesUnicos(
+        IReadOnlyCollection<CasoClienteRequest>? clientes
+    )
     {
-        return clientes.Select(x => x.ClienteId).Distinct().Count() == clientes.Count;
+        return clientes is null
+            || clientes.Select(x => x.ClienteId).Distinct().Count() == clientes.Count;
     }
 
-    private static bool TenerUnSoloPrincipal(IReadOnlyCollection<CasoClienteRequest> clientes)
+    private static bool TenerUnSoloPrincipal(
+        IReadOnlyCollection<CasoClienteRequest>? clientes
+    )
     {
-        return clientes.Count(x => x.EsPrincipal) == 1;
+        return clientes is not null
+            && clientes.Count(x => x.EsPrincipal) == 1;
     }
 }

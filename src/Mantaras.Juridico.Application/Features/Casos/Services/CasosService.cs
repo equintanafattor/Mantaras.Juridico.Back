@@ -155,7 +155,6 @@ public sealed class CasosService : ICasosService
         caso.FaseInterna = request.FaseInterna;
         caso.TipoTramite = NormalizarOpcional(request.TipoTramite);
         caso.Observaciones = NormalizarOpcional(request.Observaciones);
-        caso.Activo = request.Activo;
         caso.FechaModificacion = DateTime.UtcNow;
         caso.UsuarioModificacion = _currentUser.Usuario;
 

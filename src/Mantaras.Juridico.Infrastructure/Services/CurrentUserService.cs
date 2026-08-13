@@ -1,8 +1,28 @@
+using System.Security.Claims;
 using Mantaras.Juridico.Application.Common.Interfaces;
+using Microsoft.AspNetCore.Http;
 
 namespace Mantaras.Juridico.Infrastructure.Services;
 
-public class CurrentUserService : ICurrentUserService
+public sealed class CurrentUserService : ICurrentUserService
 {
-    public string Usuario => "sistema";
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
+    public CurrentUserService(IHttpContextAccessor httpContextAccessor)
+    {
+        _httpContextAccessor = httpContextAccessor;
+    }
+
+    public string Usuario
+    {
+        get
+        {
+            var user = _httpContextAccessor.HttpContext?.User;
+
+            return user?.FindFirstValue(ClaimTypes.Name)
+                ?? user?.FindFirstValue(ClaimTypes.Email)
+                ?? user?.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? "sistema";
+        }
+    }
 }

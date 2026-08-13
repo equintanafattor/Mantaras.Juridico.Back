@@ -1,9 +1,12 @@
 using Mantaras.Juridico.Domain.Entities;
+using Mantaras.Juridico.Infrastructure.Identity;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Mantaras.Juridico.Infrastructure.Persistence;
 
-public class JuridicoDbContext : DbContext
+public class JuridicoDbContext : IdentityDbContext<UsuarioIdentity, IdentityRole<long>, long>
 {
     public JuridicoDbContext(DbContextOptions<JuridicoDbContext> options)
         : base(options) { }
@@ -12,14 +15,14 @@ public class JuridicoDbContext : DbContext
 
     public DbSet<Expediente> Expedientes => Set<Expediente>();
 
-    public DbSet<Caso> Casos { get; set; }
-    
-    public DbSet<CasoCliente> CasosClientes { get; set; }
+    public DbSet<Caso> Casos => Set<Caso>();
+
+    public DbSet<CasoCliente> CasosClientes => Set<CasoCliente>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(JuridicoDbContext).Assembly);
-
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(JuridicoDbContext).Assembly);
     }
 }

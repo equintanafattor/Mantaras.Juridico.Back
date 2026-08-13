@@ -40,7 +40,6 @@ jobs:
       DATABASE_URL: ${{ secrets.RAILWAY_DATABASE_PUBLIC_URL }}
       BACKUP_ENCRYPTION_PASSWORD: ${{ secrets.BACKUP_ENCRYPTION_PASSWORD }}
       POSTGRES_IMAGE: postgres:18-alpine
-      BACKUP_DIRECTORY: ${{ runner.temp }}/postgres-backup
 
     steps:
       - name: Define backup metadata
@@ -51,6 +50,8 @@ jobs:
           SCHEDULE_EXPRESSION: ${{ github.event.schedule }}
         run: |
           set -Eeuo pipefail
+
+          echo "BACKUP_DIRECTORY=$RUNNER_TEMP/postgres-backup" >> "$GITHUB_ENV"
 
           timestamp="$(date -u +'%Y%m%d-%H%M%S')"
 

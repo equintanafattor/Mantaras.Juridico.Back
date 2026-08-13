@@ -54,7 +54,18 @@ public sealed class AutenticacionService : IAutenticacionService
         await _userManager.ResetAccessFailedCountAsync(usuario);
 
         var roles = await _userManager.GetRolesAsync(usuario);
-        var expiraEnUtc = DateTime.UtcNow.AddMinutes(_jwtOptions.ExpirationMinutes);
+        var securityStamp = await _userManager.GetSecurityStampAsync(usuario);
+
+        if (string.IsNullOrWhiteSpace(securityStamp))
+        {
+            return Result<IniciarSesionResponse>.Failure(
+                AutenticacionErrors.CredencialesInvalidas
+            );
+        }
+
+        var expiraEnUtc = DateTime.UtcNow.AddMinutes(
+            _jwtOptions.ExpirationMinutes
+        );
 
         var claims = new List<Claim>
         {
@@ -64,6 +75,7 @@ public sealed class AutenticacionService : IAutenticacionService
             new(JwtRegisteredClaimNames.Email, usuario.Email!),
             new(ClaimTypes.Email, usuario.Email!),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new(JwtClaimTypes.SecurityStamp, securityStamp),
         };
 
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));

@@ -28,4 +28,14 @@ public static class UsuarioErrors
         "Usuarios.UltimoAdministrador",
         "No se puede desactivar al último administrador activo."
     );
+
+    public static readonly Error CreacionFallida = new(
+    "Usuarios.CreacionFallida",
+    "No se pudo crear el usuario."
+);
+
+    public static readonly Error ActualizacionFallida = new(
+        "Usuarios.ActualizacionFallida",
+        "No se pudo actualizar el usuario."
+    );
 }

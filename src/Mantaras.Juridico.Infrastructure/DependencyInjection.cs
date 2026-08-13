@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using System.Text;
 using Mantaras.Juridico.Application.Common.Interfaces;
 using Mantaras.Juridico.Application.Features.Autenticacion.Services;
+using Mantaras.Juridico.Application.Features.Usuarios.Services;
 using Mantaras.Juridico.Infrastructure.Identity;
 using Mantaras.Juridico.Infrastructure.Persistence;
 using Mantaras.Juridico.Infrastructure.Persistence.Repositories;
@@ -95,6 +97,57 @@ public static class DependencyInjection
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.FromMinutes(1),
                 };
+                options.Events = new JwtBearerEvents
+                {
+                    OnTokenValidated = async context =>
+                    {
+                        var usuarioId = context.Principal?.FindFirstValue(
+                            ClaimTypes.NameIdentifier
+                        );
+
+                        var tokenSecurityStamp = context.Principal?.FindFirstValue(
+                            JwtClaimTypes.SecurityStamp
+                        );
+
+                        if (
+                            string.IsNullOrWhiteSpace(usuarioId)
+                            || string.IsNullOrWhiteSpace(tokenSecurityStamp)
+                        )
+                        {
+                            context.Fail("El token no contiene los datos requeridos.");
+                            return;
+                        }
+
+                        var userManager =
+                            context.HttpContext.RequestServices
+                                .GetRequiredService<UserManager<UsuarioIdentity>>();
+
+                        var usuario = await userManager.FindByIdAsync(usuarioId);
+
+                        if (usuario is null || !usuario.Activo)
+                        {
+                            context.Fail(
+                                "El usuario no existe o se encuentra inactivo."
+                            );
+                            return;
+                        }
+
+                        var currentSecurityStamp =
+                            await userManager.GetSecurityStampAsync(usuario);
+
+                        if (
+                            string.IsNullOrWhiteSpace(currentSecurityStamp)
+                            || !string.Equals(
+                                tokenSecurityStamp,
+                                currentSecurityStamp,
+                                StringComparison.Ordinal
+                            )
+                        )
+                        {
+                            context.Fail("La sesión ya no se encuentra vigente.");
+                        }
+                    }
+                };
             });
 
         services.AddScoped<IAutenticacionService, AutenticacionService>();
@@ -103,6 +156,7 @@ public static class DependencyInjection
         services.AddScoped<ICasoRepository, CasoRepository>();
         services.AddScoped<IExpedienteRepository, ExpedienteRepository>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IUsuariosService, UsuariosService>();
 
         return services;
     }

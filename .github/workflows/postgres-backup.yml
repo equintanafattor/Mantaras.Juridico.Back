@@ -1,0 +1,242 @@
+name: PostgreSQL backup
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    # Diario, excepto el primer día del mes.
+    - cron: "15 3 2-31 * *"
+      timezone: "America/Argentina/Buenos_Aires"
+
+    # Copia mensual.
+    - cron: "45 3 1 * *"
+      timezone: "America/Argentina/Buenos_Aires"
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    name: Backup and restore validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres-validation:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: restore_validation
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: restore_validation_2026
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d restore_validation"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      DATABASE_URL: ${{ secrets.RAILWAY_DATABASE_PUBLIC_URL }}
+      BACKUP_ENCRYPTION_PASSWORD: ${{ secrets.BACKUP_ENCRYPTION_PASSWORD }}
+      POSTGRES_IMAGE: postgres:18-alpine
+      BACKUP_DIRECTORY: ${{ runner.temp }}/postgres-backup
+
+    steps:
+      - name: Define backup metadata
+        id: metadata
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE_EXPRESSION: ${{ github.event.schedule }}
+        run: |
+          set -Eeuo pipefail
+
+          timestamp="$(date -u +'%Y%m%d-%H%M%S')"
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            backup_type="manual"
+            retention_days="14"
+          elif [[ "$SCHEDULE_EXPRESSION" == "45 3 1 * *" ]]; then
+            backup_type="monthly"
+            retention_days="90"
+          else
+            backup_type="daily"
+            retention_days="14"
+          fi
+
+          echo "timestamp=$timestamp" >> "$GITHUB_OUTPUT"
+          echo "backup_type=$backup_type" >> "$GITHUB_OUTPUT"
+          echo "retention_days=$retention_days" >> "$GITHUB_OUTPUT"
+
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          if [[ -z "$DATABASE_URL" ]]; then
+            echo "::error::RAILWAY_DATABASE_PUBLIC_URL is not configured."
+            exit 1
+          fi
+
+          if [[ -z "$BACKUP_ENCRYPTION_PASSWORD" ]]; then
+            echo "::error::BACKUP_ENCRYPTION_PASSWORD is not configured."
+            exit 1
+          fi
+
+      - name: Create PostgreSQL dump
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          mkdir -p "$BACKUP_DIRECTORY"
+
+          docker run --rm \
+            --network host \
+            --user "$(id -u):$(id -g)" \
+            --env DATABASE_URL \
+            --volume "$BACKUP_DIRECTORY:/backup" \
+            "$POSTGRES_IMAGE" \
+            sh -ceu '
+              pg_dump "$DATABASE_URL" \
+                --format=custom \
+                --compress=9 \
+                --no-owner \
+                --no-privileges \
+                --file=/backup/database.dump
+            '
+
+          test -s "$BACKUP_DIRECTORY/database.dump"
+
+      - name: Inspect backup archive
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --volume "$BACKUP_DIRECTORY:/backup:ro" \
+            "$POSTGRES_IMAGE" \
+            pg_restore \
+              --list \
+              /backup/database.dump \
+              > "$BACKUP_DIRECTORY/database.contents"
+
+          test -s "$BACKUP_DIRECTORY/database.contents"
+
+      - name: Restore into temporary PostgreSQL
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          docker run --rm \
+            --network host \
+            --env PGPASSWORD=restore_validation_2026 \
+            --volume "$BACKUP_DIRECTORY:/backup:ro" \
+            "$POSTGRES_IMAGE" \
+            pg_restore \
+              --host=127.0.0.1 \
+              --port=5432 \
+              --username=postgres \
+              --dbname=restore_validation \
+              --no-owner \
+              --no-privileges \
+              --exit-on-error \
+              /backup/database.dump
+
+      - name: Validate restored database
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          run_query() {
+            docker run --rm \
+              --network host \
+              --env PGPASSWORD=restore_validation_2026 \
+              "$POSTGRES_IMAGE" \
+              psql \
+                --host=127.0.0.1 \
+                --port=5432 \
+                --username=postgres \
+                --dbname=restore_validation \
+                --tuples-only \
+                --no-align \
+                --set=ON_ERROR_STOP=1 \
+                --command="$1"
+          }
+
+          table_count="$(
+            run_query "
+              SELECT count(*)
+              FROM information_schema.tables
+              WHERE table_schema = 'public'
+                AND table_type = 'BASE TABLE';
+            "
+          )"
+
+          migration_count="$(
+            run_query 'SELECT count(*) FROM "__EFMigrationsHistory";'
+          )"
+
+          user_count="$(
+            run_query 'SELECT count(*) FROM "AspNetUsers";'
+          )"
+
+          if (( table_count <= 0 )); then
+            echo "::error::The restored database contains no public tables."
+            exit 1
+          fi
+
+          if (( migration_count <= 0 )); then
+            echo "::error::The restored database contains no EF migrations."
+            exit 1
+          fi
+
+          if (( user_count <= 0 )); then
+            echo "::error::The restored database contains no users."
+            exit 1
+          fi
+
+          echo "Restore validation completed successfully."
+          echo "Tables: $table_count"
+          echo "EF migrations: $migration_count"
+          echo "Users: $user_count"
+
+      - name: Encrypt validated backup
+        shell: bash
+        env:
+          TIMESTAMP: ${{ steps.metadata.outputs.timestamp }}
+        run: |
+          set -Eeuo pipefail
+
+          encrypted_file="$BACKUP_DIRECTORY/mantaras-juridico-$TIMESTAMP.dump.enc"
+
+          openssl enc \
+            -aes-256-cbc \
+            -salt \
+            -pbkdf2 \
+            -iter 200000 \
+            -in "$BACKUP_DIRECTORY/database.dump" \
+            -out "$encrypted_file" \
+            -pass env:BACKUP_ENCRYPTION_PASSWORD
+
+          sha256sum "$encrypted_file" > "$encrypted_file.sha256"
+
+          rm -f \
+            "$BACKUP_DIRECTORY/database.dump" \
+            "$BACKUP_DIRECTORY/database.contents"
+
+          test -s "$encrypted_file"
+          test -s "$encrypted_file.sha256"
+
+      - name: Upload encrypted backup
+        uses: actions/upload-artifact@v7
+        with:
+          name: >-
+            postgres-${{ steps.metadata.outputs.backup_type }}-${{ steps.metadata.outputs.timestamp }}
+          path: |
+            ${{ env.BACKUP_DIRECTORY }}/*.dump.enc
+            ${{ env.BACKUP_DIRECTORY }}/*.sha256
+          if-no-files-found: error
+          retention-days: ${{ steps.metadata.outputs.retention_days }}
+          compression-level: 0

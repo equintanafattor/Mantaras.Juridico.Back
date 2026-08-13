@@ -13,6 +13,18 @@ public sealed class CurrentUserService : ICurrentUserService
         _httpContextAccessor = httpContextAccessor;
     }
 
+    public long? UsuarioId
+    {
+        get
+        {
+            var value = _httpContextAccessor.HttpContext?.User.FindFirstValue(
+                ClaimTypes.NameIdentifier
+            );
+
+            return long.TryParse(value, out var usuarioId) ? usuarioId : null;
+        }
+    }
+
     public string Usuario
     {
         get

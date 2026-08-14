@@ -12,6 +12,12 @@ public interface ICasosService
         CancellationToken cancellationToken = default
     );
 
+    Task<Result<CrearCasoConExpedientePrincipalResponse>>
+    CrearConExpedientePrincipalAsync(
+        CrearCasoConExpedientePrincipalRequest request,
+        CancellationToken cancellationToken = default
+    );
+
     Task<Result<CasoDetalleResponse>> ObtenerPorIdAsync(
         long casoId,
         CancellationToken cancellationToken = default

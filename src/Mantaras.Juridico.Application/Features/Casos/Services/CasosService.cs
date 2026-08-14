@@ -4,6 +4,7 @@ using Mantaras.Juridico.Application.Common.Results;
 using Mantaras.Juridico.Application.Features.Casos.Requests;
 using Mantaras.Juridico.Application.Features.Casos.Responses;
 using Mantaras.Juridico.Domain.Entities;
+using Mantaras.Juridico.Domain.Enums;
 
 namespace Mantaras.Juridico.Application.Features.Casos.Services;
 
@@ -43,16 +44,11 @@ public sealed class CasosService : ICasosService
 
         var clientesPorId = clientes.ToDictionary(x => x.ClienteId);
 
-        var caso = new Caso
-        {
-            Titulo = request.Titulo.Trim(),
-            FaseInterna = request.FaseInterna,
-            TipoTramite = NormalizarOpcional(request.TipoTramite),
-            Observaciones = NormalizarOpcional(request.Observaciones),
-            FechaCreacion = DateTime.UtcNow,
-            UsuarioCreacion = _currentUser.Usuario,
-            Activo = true,
-        };
+        var caso = ConstruirCaso(
+            request,
+            clientesPorId,
+            DateTime.UtcNow
+        );
 
         foreach (var clienteRequest in request.Clientes)
         {
@@ -74,6 +70,82 @@ public sealed class CasosService : ICasosService
         await _casoRepository.GuardarCambiosAsync(cancellationToken);
 
         return Result<CasoResponse>.Success(MapearResponse(caso));
+    }
+
+    public async Task<Result<CrearCasoConExpedientePrincipalResponse>>
+    CrearConExpedientePrincipalAsync(
+        CrearCasoConExpedientePrincipalRequest request,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var clienteIds = request
+            .Caso.Clientes
+            .Select(x => x.ClienteId)
+            .Distinct()
+            .ToArray();
+
+        var clientes = await _clienteRepository.ObtenerActivosPorIdsAsync(
+            clienteIds,
+            cancellationToken
+        );
+
+        if (clientes.Count != clienteIds.Length)
+        {
+            return Result<CrearCasoConExpedientePrincipalResponse>.Failure(
+                CasoErrors.ClientesNoEncontrados
+            );
+        }
+
+        var clientesPorId = clientes.ToDictionary(x => x.ClienteId);
+        var fechaCreacion = DateTime.UtcNow;
+
+        var caso = ConstruirCaso(
+            request.Caso,
+            clientesPorId,
+            fechaCreacion
+        );
+
+        var expediente = new Expediente
+        {
+            TipoExpediente = TipoExpediente.Principal,
+            ExpedientePadreId = null,
+            NumeroExpediente = NormalizarOpcional(
+                request.Expediente.NumeroExpediente
+            ),
+            Caratula = request.Expediente.Caratula.Trim(),
+            Juzgado = NormalizarOpcional(request.Expediente.Juzgado),
+            FechaInicio = request.Expediente.FechaInicio,
+            EstadoLegal = NormalizarOpcional(
+                request.Expediente.EstadoLegal
+            ),
+            Caso = caso,
+            FechaCreacion = fechaCreacion,
+            UsuarioCreacion = _currentUser.Usuario,
+            Activo = true,
+        };
+
+        caso.Expedientes.Add(expediente);
+
+        await _casoRepository.AgregarAsync(
+            caso,
+            cancellationToken
+        );
+
+        await _casoRepository.GuardarCambiosAsync(
+            cancellationToken
+        );
+
+        return Result<CrearCasoConExpedientePrincipalResponse>.Success(
+            new CrearCasoConExpedientePrincipalResponse
+            {
+                CasoId = caso.CasoId,
+                ExpedienteId = expediente.ExpedienteId,
+                TituloCaso = caso.Titulo,
+                NumeroExpediente = expediente.NumeroExpediente,
+                Caratula = expediente.Caratula,
+                FechaCreacion = fechaCreacion,
+            }
+        );
     }
 
     public async Task<Result<CasoDetalleResponse>> ObtenerPorIdAsync(
@@ -269,6 +341,43 @@ public sealed class CasosService : ICasosService
         await _casoRepository.GuardarCambiosAsync(cancellationToken);
 
         return Result<bool>.Success(true);
+    }
+
+    private Caso ConstruirCaso(
+    CrearCasoRequest request,
+    IReadOnlyDictionary<long, Cliente> clientesPorId,
+    DateTime fechaCreacion
+)
+    {
+        var caso = new Caso
+        {
+            Titulo = request.Titulo.Trim(),
+            FaseInterna = request.FaseInterna,
+            TipoTramite = NormalizarOpcional(request.TipoTramite),
+            Observaciones = NormalizarOpcional(request.Observaciones),
+            FechaCreacion = fechaCreacion,
+            UsuarioCreacion = _currentUser.Usuario,
+            Activo = true,
+        };
+
+        foreach (var clienteRequest in request.Clientes)
+        {
+            var cliente = clientesPorId[clienteRequest.ClienteId];
+
+            caso.Clientes.Add(
+                new CasoCliente
+                {
+                    ClienteId = cliente.ClienteId,
+                    TipoParticipacion =
+                        clienteRequest.TipoParticipacion,
+                    EsPrincipal = clienteRequest.EsPrincipal,
+                    Caso = caso,
+                    Cliente = cliente,
+                }
+            );
+        }
+
+        return caso;
     }
 
     private static CasoDetalleResponse MapearDetalleResponse(Caso caso)

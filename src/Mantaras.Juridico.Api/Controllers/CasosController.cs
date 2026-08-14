@@ -53,6 +53,42 @@ public sealed class CasosController : ControllerBase
         );
     }
 
+    [HttpPost("con-expediente-principal")]
+    [ProducesResponseType(
+    typeof(CrearCasoConExpedientePrincipalResponse),
+    StatusCodes.Status201Created
+)]
+    [ProducesResponseType(
+    typeof(ApiErrorResponse),
+    StatusCodes.Status400BadRequest
+)]
+    public async Task<
+    ActionResult<CrearCasoConExpedientePrincipalResponse>
+> CrearConExpedientePrincipal(
+    [FromBody] CrearCasoConExpedientePrincipalRequest request,
+    CancellationToken cancellationToken
+)
+    {
+        var result =
+            await _casosService.CrearConExpedientePrincipalAsync(
+                request,
+                cancellationToken
+            );
+
+        if (result.IsFailure)
+        {
+            return BadRequest(CrearErrorResponse(result.Errors));
+        }
+
+        var response = result.Value!;
+
+        return CreatedAtAction(
+            nameof(ObtenerPorId),
+            new { casoId = response.CasoId },
+            response
+        );
+    }
+
     [HttpGet("{casoId:long}")]
     [ProducesResponseType(
         typeof(CasoDetalleResponse),

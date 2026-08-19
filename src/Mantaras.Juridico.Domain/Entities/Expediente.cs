@@ -13,6 +13,7 @@ public class Expediente : AuditableEntity
     public string? Juzgado { get; set; }
     public DateOnly? FechaInicio { get; set; }
     public string? EstadoLegal { get; set; }
+    public string? Observaciones { get; set; }
     public Caso Caso { get; set; } = null!;
     public Expediente? ExpedientePadre { get; set; }
     public TipoExpediente TipoExpediente { get; set; }

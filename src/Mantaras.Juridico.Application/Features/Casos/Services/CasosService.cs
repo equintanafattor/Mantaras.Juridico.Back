@@ -50,22 +50,6 @@ public sealed class CasosService : ICasosService
             DateTime.UtcNow
         );
 
-        foreach (var clienteRequest in request.Clientes)
-        {
-            var cliente = clientesPorId[clienteRequest.ClienteId];
-
-            caso.Clientes.Add(
-                new CasoCliente
-                {
-                    ClienteId = cliente.ClienteId,
-                    TipoParticipacion = clienteRequest.TipoParticipacion,
-                    EsPrincipal = clienteRequest.EsPrincipal,
-                    Caso = caso,
-                    Cliente = cliente,
-                }
-            );
-        }
-
         await _casoRepository.AgregarAsync(caso, cancellationToken);
         await _casoRepository.GuardarCambiosAsync(cancellationToken);
 
@@ -117,6 +101,9 @@ public sealed class CasosService : ICasosService
             FechaInicio = request.Expediente.FechaInicio,
             EstadoLegal = NormalizarOpcional(
                 request.Expediente.EstadoLegal
+            ),
+            Observaciones = NormalizarOpcional(
+                request.Expediente.Observaciones
             ),
             Caso = caso,
             FechaCreacion = fechaCreacion,
@@ -419,6 +406,7 @@ public sealed class CasosService : ICasosService
                     Juzgado = x.Juzgado,
                     FechaInicio = x.FechaInicio,
                     EstadoLegal = x.EstadoLegal,
+                    Observaciones = x.Observaciones,
                     Activo = x.Activo,
                 })
                 .ToArray(),

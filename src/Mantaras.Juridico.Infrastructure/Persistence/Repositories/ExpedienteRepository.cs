@@ -179,6 +179,13 @@ public sealed class ExpedienteRepository : IExpedienteRepository
                         $"%{termino}%"
                     )
                 )
+                || (
+                    x.Observaciones != null
+                    && EF.Functions.ILike(
+                        x.Observaciones,
+                        $"%{termino}%"
+                    )
+                )
                 || EF.Functions.ILike(
                     x.Caso.Titulo,
                     $"%{termino}%"

@@ -21,6 +21,8 @@ public class ExpedienteConfiguration : IEntityTypeConfiguration<Expediente>
 
         builder.Property(x => x.EstadoLegal).HasMaxLength(200);
 
+        builder.Property(x => x.Observaciones).HasMaxLength(2000);
+
         builder.Property(x => x.Activo).HasDefaultValue(true);
 
         builder.HasIndex(x => x.NumeroExpediente);

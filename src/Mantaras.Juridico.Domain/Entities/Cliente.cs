@@ -30,5 +30,8 @@ public class Cliente : AuditableEntity
 
     public string? Observaciones { get; set; }
 
+    public ICollection<Observacion> HistorialObservaciones { get; set; } =
+    new List<Observacion>();
+
     public ICollection<CasoCliente> Casos { get; set; } = new List<CasoCliente>();
 }

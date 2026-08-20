@@ -19,6 +19,8 @@ public class JuridicoDbContext : IdentityDbContext<UsuarioIdentity, IdentityRole
 
     public DbSet<CasoCliente> CasosClientes => Set<CasoCliente>();
 
+    public DbSet<Observacion> Observaciones => Set<Observacion>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

@@ -15,6 +15,9 @@ public class Caso : AuditableEntity
 
     public string? Observaciones { get; set; }
 
+    public ICollection<Observacion> HistorialObservaciones { get; set; } =
+        new List<Observacion>();
+
     public ICollection<CasoCliente> Clientes { get; set; } = new List<CasoCliente>();
 
     public ICollection<Expediente> Expedientes { get; set; } = new List<Expediente>();

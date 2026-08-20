@@ -14,6 +14,8 @@ public class Expediente : AuditableEntity
     public DateOnly? FechaInicio { get; set; }
     public string? EstadoLegal { get; set; }
     public string? Observaciones { get; set; }
+    public ICollection<Observacion> HistorialObservaciones { get; set; } =
+        new List<Observacion>();
     public Caso Caso { get; set; } = null!;
     public Expediente? ExpedientePadre { get; set; }
     public TipoExpediente TipoExpediente { get; set; }

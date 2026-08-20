@@ -2,6 +2,7 @@ using FluentValidation;
 using Mantaras.Juridico.Application.Features.Casos.Services;
 using Mantaras.Juridico.Application.Features.Clientes.Services;
 using Mantaras.Juridico.Application.Features.Expedientes.Services;
+using Mantaras.Juridico.Application.Features.Observaciones.Services;
 using Mantaras.Juridico.Application.Features.Panel.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<ICasosService, CasosService>();
         services.AddScoped<IExpedientesService, ExpedientesService>();
         services.AddScoped<IPanelService, PanelService>();
+        services.AddScoped<IObservacionesService, ObservacionesService>();
 
         return services;
     }

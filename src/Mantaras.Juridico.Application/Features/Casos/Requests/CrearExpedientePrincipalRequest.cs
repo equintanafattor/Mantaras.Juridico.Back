@@ -11,6 +11,4 @@ public sealed class CrearExpedientePrincipalRequest
     public DateOnly? FechaInicio { get; set; }
 
     public string? EstadoLegal { get; set; }
-
-    public string? Observaciones { get; set; }
 }

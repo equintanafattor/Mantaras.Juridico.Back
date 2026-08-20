@@ -28,8 +28,6 @@ public class Cliente : AuditableEntity
 
     public string? Provincia { get; set; }
 
-    public string? Observaciones { get; set; }
-
     public ICollection<Observacion> HistorialObservaciones { get; set; } =
     new List<Observacion>();
 

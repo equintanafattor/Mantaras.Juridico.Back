@@ -21,10 +21,6 @@ public sealed class ActualizarCasoRequestValidator : AbstractValidator<Actualiza
             .MaximumLength(200)
             .WithMessage("El tipo de trámite no puede superar los 200 caracteres.");
 
-        RuleFor(x => x.Observaciones)
-            .MaximumLength(2000)
-            .WithMessage("Las observaciones no pueden superar los 2000 caracteres.");
-
         RuleFor(x => x.Clientes)
             .Cascade(CascadeMode.Stop)
             .NotEmpty()

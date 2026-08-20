@@ -71,11 +71,5 @@ public sealed class CrearExpedienteRequestValidator
         RuleFor(x => x.EstadoLegal)
             .MaximumLength(200)
             .WithMessage("El estado legal no puede superar los 200 caracteres.");
-
-        RuleFor(x => x.Observaciones)
-            .MaximumLength(2000)
-            .WithMessage(
-                "Las observaciones no pueden superar los 2000 caracteres."
-            );
     }
 }

@@ -26,8 +26,6 @@ public sealed class ClienteDetalleResponse
 
     public string? Provincia { get; set; }
 
-    public string? Observaciones { get; set; }
-
     public DateTime FechaCreacion { get; set; }
 
     public DateTime? FechaModificacion { get; set; }

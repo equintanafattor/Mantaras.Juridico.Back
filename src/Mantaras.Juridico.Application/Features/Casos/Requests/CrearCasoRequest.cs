@@ -10,8 +10,6 @@ public sealed class CrearCasoRequest
 
     public string? TipoTramite { get; set; }
 
-    public string? Observaciones { get; set; }
-
     public IReadOnlyCollection<CasoClienteRequest> Clientes { get; set; } =
         Array.Empty<CasoClienteRequest>();
 }

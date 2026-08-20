@@ -18,8 +18,6 @@ public class CasoConfiguration : IEntityTypeConfiguration<Caso>
 
         builder.Property(x => x.TipoTramite).HasMaxLength(200);
 
-        builder.Property(x => x.Observaciones).HasMaxLength(2000);
-
         builder.Property(x => x.Activo).HasDefaultValue(true);
 
         builder.HasIndex(x => x.Titulo);

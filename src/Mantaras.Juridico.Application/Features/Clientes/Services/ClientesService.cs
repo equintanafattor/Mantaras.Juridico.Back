@@ -55,7 +55,6 @@ public class ClientesService : IClientesService
             Domicilio = NormalizarOpcional(request.Domicilio),
             Localidad = NormalizarOpcional(request.Localidad),
             Provincia = NormalizarOpcional(request.Provincia),
-            Observaciones = NormalizarOpcional(request.Observaciones),
             FechaCreacion = DateTime.UtcNow,
             UsuarioCreacion = _currentUser.Usuario,
             Activo = true,
@@ -133,7 +132,6 @@ public class ClientesService : IClientesService
         cliente.Domicilio = NormalizarOpcional(request.Domicilio);
         cliente.Localidad = NormalizarOpcional(request.Localidad);
         cliente.Provincia = NormalizarOpcional(request.Provincia);
-        cliente.Observaciones = NormalizarOpcional(request.Observaciones);
         cliente.FechaModificacion = DateTime.UtcNow;
         cliente.UsuarioModificacion = _currentUser.Usuario;
 
@@ -248,7 +246,6 @@ public class ClientesService : IClientesService
             Domicilio = cliente.Domicilio,
             Localidad = cliente.Localidad,
             Provincia = cliente.Provincia,
-            Observaciones = cliente.Observaciones,
             FechaCreacion = cliente.FechaCreacion,
             Activo = cliente.Activo,
         };
@@ -270,7 +267,6 @@ public class ClientesService : IClientesService
             Domicilio = cliente.Domicilio,
             Localidad = cliente.Localidad,
             Provincia = cliente.Provincia,
-            Observaciones = cliente.Observaciones,
             FechaCreacion = cliente.FechaCreacion,
             FechaModificacion = cliente.FechaModificacion,
             Activo = cliente.Activo,
@@ -282,7 +278,6 @@ public class ClientesService : IClientesService
                     Titulo = casoCliente.Caso.Titulo,
                     FaseInterna = casoCliente.Caso.FaseInterna,
                     TipoTramite = casoCliente.Caso.TipoTramite,
-                    Observaciones = casoCliente.Caso.Observaciones,
                     TipoParticipacion = casoCliente.TipoParticipacion,
                     EsPrincipal = casoCliente.EsPrincipal,
                     Activo = casoCliente.Caso.Activo,

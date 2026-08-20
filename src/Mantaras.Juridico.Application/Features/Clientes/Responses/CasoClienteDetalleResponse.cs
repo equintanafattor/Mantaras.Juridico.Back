@@ -12,8 +12,6 @@ public sealed class CasoClienteDetalleResponse
 
     public string? TipoTramite { get; set; }
 
-    public string? Observaciones { get; set; }
-
     public TipoParticipacionCliente TipoParticipacion { get; set; }
 
     public bool EsPrincipal { get; set; }

@@ -26,8 +26,6 @@ public class ClienteResponse
 
     public string? Provincia { get; set; }
 
-    public string? Observaciones { get; set; }
-
     public DateTime FechaCreacion { get; set; }
 
     public bool Activo { get; set; }

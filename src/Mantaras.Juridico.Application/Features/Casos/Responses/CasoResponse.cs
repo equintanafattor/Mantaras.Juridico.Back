@@ -12,8 +12,6 @@ public sealed class CasoResponse
 
     public string? TipoTramite { get; set; }
 
-    public string? Observaciones { get; set; }
-
     public IReadOnlyCollection<CasoClienteResponse> Clientes { get; set; } =
         Array.Empty<CasoClienteResponse>();
 

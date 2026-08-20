@@ -54,10 +54,6 @@ public sealed class ActualizarClienteRequestValidator : AbstractValidator<Actual
             .MaximumLength(150)
             .WithMessage("La provincia no puede superar los 150 caracteres.");
 
-        RuleFor(x => x.Observaciones)
-            .MaximumLength(2000)
-            .WithMessage("Las observaciones no pueden superar los 2000 caracteres.");
-
         RuleFor(x => x.FechaNacimiento)
             .LessThanOrEqualTo(DateTime.Today)
             .When(x => x.FechaNacimiento.HasValue)

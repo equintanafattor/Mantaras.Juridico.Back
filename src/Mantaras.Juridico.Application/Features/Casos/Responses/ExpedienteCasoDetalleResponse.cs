@@ -20,7 +20,5 @@ public sealed class ExpedienteCasoDetalleResponse
 
     public string? EstadoLegal { get; set; }
 
-    public string? Observaciones { get; set; }
-
     public bool Activo { get; set; }
 }

@@ -23,6 +23,4 @@ public class CrearClienteRequest
     public string? Localidad { get; set; }
 
     public string? Provincia { get; set; }
-
-    public string? Observaciones { get; set; }
 }

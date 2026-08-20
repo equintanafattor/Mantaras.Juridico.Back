@@ -102,9 +102,6 @@ public sealed class CasosService : ICasosService
             EstadoLegal = NormalizarOpcional(
                 request.Expediente.EstadoLegal
             ),
-            Observaciones = NormalizarOpcional(
-                request.Expediente.Observaciones
-            ),
             Caso = caso,
             FechaCreacion = fechaCreacion,
             UsuarioCreacion = _currentUser.Usuario,
@@ -213,7 +210,6 @@ public sealed class CasosService : ICasosService
         caso.Titulo = request.Titulo.Trim();
         caso.FaseInterna = request.FaseInterna;
         caso.TipoTramite = NormalizarOpcional(request.TipoTramite);
-        caso.Observaciones = NormalizarOpcional(request.Observaciones);
         caso.FechaModificacion = DateTime.UtcNow;
         caso.UsuarioModificacion = _currentUser.Usuario;
 
@@ -341,7 +337,6 @@ public sealed class CasosService : ICasosService
             Titulo = request.Titulo.Trim(),
             FaseInterna = request.FaseInterna,
             TipoTramite = NormalizarOpcional(request.TipoTramite),
-            Observaciones = NormalizarOpcional(request.Observaciones),
             FechaCreacion = fechaCreacion,
             UsuarioCreacion = _currentUser.Usuario,
             Activo = true,
@@ -375,7 +370,6 @@ public sealed class CasosService : ICasosService
             Titulo = caso.Titulo,
             FaseInterna = caso.FaseInterna,
             TipoTramite = caso.TipoTramite,
-            Observaciones = caso.Observaciones,
             Clientes = caso
                 .Clientes.OrderByDescending(x => x.EsPrincipal)
                 .ThenBy(x => x.Cliente.Apellido)
@@ -406,7 +400,6 @@ public sealed class CasosService : ICasosService
                     Juzgado = x.Juzgado,
                     FechaInicio = x.FechaInicio,
                     EstadoLegal = x.EstadoLegal,
-                    Observaciones = x.Observaciones,
                     Activo = x.Activo,
                 })
                 .ToArray(),
@@ -424,7 +417,6 @@ public sealed class CasosService : ICasosService
             Titulo = caso.Titulo,
             FaseInterna = caso.FaseInterna,
             TipoTramite = caso.TipoTramite,
-            Observaciones = caso.Observaciones,
             Clientes = caso
                 .Clientes.OrderByDescending(x => x.EsPrincipal)
                 .ThenBy(x => x.Cliente.Apellido)

@@ -4,6 +4,8 @@ using Mantaras.Juridico.Application.Features.Clientes.Services;
 using Mantaras.Juridico.Application.Features.Expedientes.Services;
 using Mantaras.Juridico.Application.Features.Observaciones.Services;
 using Mantaras.Juridico.Application.Features.Panel.Services;
+using Mantaras.Juridico.Application.Features.TiposBeneficio.Services;
+using Mantaras.Juridico.Application.Features.TiposExpedienteAdministrativo.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Mantaras.Juridico.Application;
@@ -19,6 +21,9 @@ public static class DependencyInjection
         services.AddScoped<IExpedientesService, ExpedientesService>();
         services.AddScoped<IPanelService, PanelService>();
         services.AddScoped<IObservacionesService, ObservacionesService>();
+
+        services.AddScoped<ITiposBeneficioService, TiposBeneficioService>();
+        services.AddScoped<ITiposExpedienteAdministrativoService, TiposExpedienteAdministrativoService>();
 
         return services;
     }

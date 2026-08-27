@@ -13,16 +13,22 @@ public sealed class CasosService : ICasosService
     private readonly ICasoRepository _casoRepository;
     private readonly IClienteRepository _clienteRepository;
     private readonly ICurrentUserService _currentUser;
+    private readonly ITipoBeneficioRepository _tipoBeneficioRepository;
+    private readonly ITipoExpedienteAdministrativoRepository _tipoAdministrativoRepository;
 
     public CasosService(
         ICasoRepository casoRepository,
         IClienteRepository clienteRepository,
-        ICurrentUserService currentUser
+        ICurrentUserService currentUser,
+        ITipoBeneficioRepository tipoBeneficioRepository,
+        ITipoExpedienteAdministrativoRepository tipoAdministrativoRepository
     )
     {
         _casoRepository = casoRepository;
         _clienteRepository = clienteRepository;
         _currentUser = currentUser;
+        _tipoBeneficioRepository = tipoBeneficioRepository;
+        _tipoAdministrativoRepository = tipoAdministrativoRepository;
     }
 
     public async Task<Result<CasoResponse>> CrearAsync(
@@ -44,10 +50,25 @@ public sealed class CasosService : ICasosService
 
         var clientesPorId = clientes.ToDictionary(x => x.ClienteId);
 
+        var catalogos = await ResolverCatalogosAsync(
+            request.TipoBeneficioId,
+            request.TipoExpedienteAdministrativoId,
+            null,
+            null,
+            cancellationToken
+        );
+
+        if (catalogos.Error is { } error)
+        {
+            return Result<CasoResponse>.Failure(error);
+        }
+
         var caso = ConstruirCaso(
             request,
             clientesPorId,
-            DateTime.UtcNow
+            DateTime.UtcNow,
+            catalogos.Beneficio,
+            catalogos.TipoAdministrativo
         );
 
         await _casoRepository.AgregarAsync(caso, cancellationToken);
@@ -83,10 +104,25 @@ public sealed class CasosService : ICasosService
         var clientesPorId = clientes.ToDictionary(x => x.ClienteId);
         var fechaCreacion = DateTime.UtcNow;
 
+        var catalogos = await ResolverCatalogosAsync(
+            request.Caso.TipoBeneficioId,
+            request.Caso.TipoExpedienteAdministrativoId,
+            null,
+            null,
+            cancellationToken
+        );
+
+        if (catalogos.Error is { } error)
+        {
+            return Result<CrearCasoConExpedientePrincipalResponse>.Failure(error);
+        }
+
         var caso = ConstruirCaso(
             request.Caso,
             clientesPorId,
-            fechaCreacion
+            fechaCreacion,
+            catalogos.Beneficio,
+            catalogos.TipoAdministrativo
         );
 
         var expediente = new Expediente
@@ -125,6 +161,13 @@ public sealed class CasosService : ICasosService
                 CasoId = caso.CasoId,
                 ExpedienteId = expediente.ExpedienteId,
                 TituloCaso = caso.Titulo,
+                NumeroExpedienteAnses = caso.NumeroExpedienteAnses,
+                TipoBeneficioId = caso.TipoBeneficioId,
+                TipoBeneficioNombre = caso.TipoBeneficio?.Nombre,
+                TipoBeneficioActivo = caso.TipoBeneficio?.Activo,
+                TipoExpedienteAdministrativoId = caso.TipoExpedienteAdministrativoId,
+                TipoExpedienteAdministrativoNombre = caso.TipoExpedienteAdministrativo?.Nombre,
+                TipoExpedienteAdministrativoActivo = caso.TipoExpedienteAdministrativo?.Activo,
                 NumeroExpediente = expediente.NumeroExpediente,
                 Caratula = expediente.Caratula,
                 FechaCreacion = fechaCreacion,
@@ -207,9 +250,39 @@ public sealed class CasosService : ICasosService
 
         var clientesPorId = clientes.ToDictionary(x => x.ClienteId);
 
+        var tipoBeneficioId = request.TipoBeneficioIdInformado
+            ? request.TipoBeneficioId
+            : caso.TipoBeneficioId;
+        var tipoAdministrativoId = request.TipoExpedienteAdministrativoIdInformado
+            ? request.TipoExpedienteAdministrativoId
+            : caso.TipoExpedienteAdministrativoId;
+
+        var catalogos = await ResolverCatalogosAsync(
+            tipoBeneficioId,
+            tipoAdministrativoId,
+            caso.TipoBeneficioId,
+            caso.TipoExpedienteAdministrativoId,
+            cancellationToken
+        );
+
+        if (catalogos.Error is { } error)
+        {
+            return Result<CasoResponse>.Failure(error);
+        }
+
         caso.Titulo = request.Titulo.Trim();
         caso.FaseInterna = request.FaseInterna;
         caso.TipoTramite = NormalizarOpcional(request.TipoTramite);
+
+        if (request.NumeroExpedienteAnsesInformado)
+        {
+            caso.NumeroExpedienteAnses = NormalizarOpcional(request.NumeroExpedienteAnses);
+        }
+
+        caso.TipoBeneficioId = tipoBeneficioId;
+        caso.TipoBeneficio = catalogos.Beneficio;
+        caso.TipoExpedienteAdministrativoId = tipoAdministrativoId;
+        caso.TipoExpedienteAdministrativo = catalogos.TipoAdministrativo;
         caso.FechaModificacion = DateTime.UtcNow;
         caso.UsuarioModificacion = _currentUser.Usuario;
 
@@ -329,7 +402,9 @@ public sealed class CasosService : ICasosService
     private Caso ConstruirCaso(
     CrearCasoRequest request,
     IReadOnlyDictionary<long, Cliente> clientesPorId,
-    DateTime fechaCreacion
+    DateTime fechaCreacion,
+    TipoBeneficio? tipoBeneficio,
+    TipoExpedienteAdministrativo? tipoAdministrativo
 )
     {
         var caso = new Caso
@@ -337,6 +412,11 @@ public sealed class CasosService : ICasosService
             Titulo = request.Titulo.Trim(),
             FaseInterna = request.FaseInterna,
             TipoTramite = NormalizarOpcional(request.TipoTramite),
+            NumeroExpedienteAnses = NormalizarOpcional(request.NumeroExpedienteAnses),
+            TipoBeneficioId = request.TipoBeneficioId,
+            TipoBeneficio = tipoBeneficio,
+            TipoExpedienteAdministrativoId = request.TipoExpedienteAdministrativoId,
+            TipoExpedienteAdministrativo = tipoAdministrativo,
             FechaCreacion = fechaCreacion,
             UsuarioCreacion = _currentUser.Usuario,
             Activo = true,
@@ -370,6 +450,13 @@ public sealed class CasosService : ICasosService
             Titulo = caso.Titulo,
             FaseInterna = caso.FaseInterna,
             TipoTramite = caso.TipoTramite,
+            NumeroExpedienteAnses = caso.NumeroExpedienteAnses,
+            TipoBeneficioId = caso.TipoBeneficioId,
+            TipoBeneficioNombre = caso.TipoBeneficio?.Nombre,
+            TipoBeneficioActivo = caso.TipoBeneficio?.Activo,
+            TipoExpedienteAdministrativoId = caso.TipoExpedienteAdministrativoId,
+            TipoExpedienteAdministrativoNombre = caso.TipoExpedienteAdministrativo?.Nombre,
+            TipoExpedienteAdministrativoActivo = caso.TipoExpedienteAdministrativo?.Activo,
             Clientes = caso
                 .Clientes.OrderByDescending(x => x.EsPrincipal)
                 .ThenBy(x => x.Cliente.Apellido)
@@ -417,6 +504,13 @@ public sealed class CasosService : ICasosService
             Titulo = caso.Titulo,
             FaseInterna = caso.FaseInterna,
             TipoTramite = caso.TipoTramite,
+            NumeroExpedienteAnses = caso.NumeroExpedienteAnses,
+            TipoBeneficioId = caso.TipoBeneficioId,
+            TipoBeneficioNombre = caso.TipoBeneficio?.Nombre,
+            TipoBeneficioActivo = caso.TipoBeneficio?.Activo,
+            TipoExpedienteAdministrativoId = caso.TipoExpedienteAdministrativoId,
+            TipoExpedienteAdministrativoNombre = caso.TipoExpedienteAdministrativo?.Nombre,
+            TipoExpedienteAdministrativoActivo = caso.TipoExpedienteAdministrativo?.Activo,
             Clientes = caso
                 .Clientes.OrderByDescending(x => x.EsPrincipal)
                 .ThenBy(x => x.Cliente.Apellido)
@@ -437,6 +531,61 @@ public sealed class CasosService : ICasosService
             FechaModificacion = caso.FechaModificacion,
             Activo = caso.Activo,
         };
+    }
+
+    private async Task<(
+        TipoBeneficio? Beneficio,
+        TipoExpedienteAdministrativo? TipoAdministrativo,
+        Error? Error
+    )> ResolverCatalogosAsync(
+        long? tipoBeneficioId,
+        long? tipoAdministrativoId,
+        long? tipoBeneficioActualId,
+        long? tipoAdministrativoActualId,
+        CancellationToken cancellationToken
+    )
+    {
+        TipoBeneficio? beneficio = null;
+        TipoExpedienteAdministrativo? tipoAdministrativo = null;
+
+        if (tipoBeneficioId.HasValue)
+        {
+            beneficio = await _tipoBeneficioRepository.ObtenerPorIdAsync(
+                tipoBeneficioId.Value,
+                cancellationToken
+            );
+
+            if (beneficio is null)
+            {
+                return (null, null, CasoErrors.TipoBeneficioNoEncontrado);
+            }
+
+            // Se permite conservar el valor histórico, pero no asignarlo de nuevo.
+            if (!beneficio.Activo && tipoBeneficioId != tipoBeneficioActualId)
+            {
+                return (null, null, CasoErrors.TipoBeneficioInactivo);
+            }
+        }
+
+        if (tipoAdministrativoId.HasValue)
+        {
+            tipoAdministrativo = await _tipoAdministrativoRepository.ObtenerPorIdAsync(
+                tipoAdministrativoId.Value,
+                cancellationToken
+            );
+
+            if (tipoAdministrativo is null)
+            {
+                return (null, null, CasoErrors.TipoExpedienteAdministrativoNoEncontrado);
+            }
+
+            if (!tipoAdministrativo.Activo && tipoAdministrativoId != tipoAdministrativoActualId)
+            {
+                return (null, null, CasoErrors.TipoExpedienteAdministrativoInactivo);
+            }
+        }
+
+        return (beneficio, tipoAdministrativo, null);
     }
 
     private static string? NormalizarOpcional(string? valor)

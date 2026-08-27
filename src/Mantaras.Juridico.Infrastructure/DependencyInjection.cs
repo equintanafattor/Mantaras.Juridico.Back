@@ -160,6 +160,9 @@ public static class DependencyInjection
         services.AddScoped<IPanelRepository, PanelRepository>();
         services.AddScoped<IObservacionRepository, ObservacionRepository>();
 
+        services.AddScoped<ITipoBeneficioRepository, TipoBeneficioRepository>();
+        services.AddScoped<ITipoExpedienteAdministrativoRepository, TipoExpedienteAdministrativoRepository>();
+
         return services;
     }
 }

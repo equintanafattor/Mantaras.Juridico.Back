@@ -13,6 +13,16 @@ public class Caso : AuditableEntity
 
     public string? TipoTramite { get; set; }
 
+    public string? NumeroExpedienteAnses { get; set; }
+
+    public long? TipoBeneficioId { get; set; }
+
+    public long? TipoExpedienteAdministrativoId { get; set; }
+
+    public TipoBeneficio? TipoBeneficio { get; set; }
+
+    public TipoExpedienteAdministrativo? TipoExpedienteAdministrativo { get; set; }
+
     public ICollection<Observacion> HistorialObservaciones { get; set; } =
         new List<Observacion>();
 

@@ -21,6 +21,11 @@ public class JuridicoDbContext : IdentityDbContext<UsuarioIdentity, IdentityRole
 
     public DbSet<Observacion> Observaciones => Set<Observacion>();
 
+    public DbSet<TipoBeneficio> TiposBeneficio => Set<TipoBeneficio>();
+
+    public DbSet<TipoExpedienteAdministrativo> TiposExpedienteAdministrativo =>
+        Set<TipoExpedienteAdministrativo>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

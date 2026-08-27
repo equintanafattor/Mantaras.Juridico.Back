@@ -14,6 +14,26 @@ public static class CasoErrors
         "Uno o más clientes informados no existen o están inactivos."
     );
 
+    public static readonly Error TipoBeneficioNoEncontrado = new(
+        "Casos.TipoBeneficioNoEncontrado",
+        "El tipo de beneficio informado no existe."
+    );
+
+    public static readonly Error TipoBeneficioInactivo = new(
+        "Casos.TipoBeneficioInactivo",
+        "No se puede asignar un tipo de beneficio inactivo."
+    );
+
+    public static readonly Error TipoExpedienteAdministrativoNoEncontrado = new(
+        "Casos.TipoExpedienteAdministrativoNoEncontrado",
+        "El tipo de expediente administrativo informado no existe."
+    );
+
+    public static readonly Error TipoExpedienteAdministrativoInactivo = new(
+        "Casos.TipoExpedienteAdministrativoInactivo",
+        "No se puede asignar un tipo de expediente administrativo inactivo."
+    );
+
     public static readonly Error ExpedientesActivos = new(
         "Casos.ExpedientesActivos",
         "No se puede dar de baja el caso porque tiene expedientes activos."

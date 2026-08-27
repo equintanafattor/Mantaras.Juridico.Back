@@ -28,3 +28,9 @@ Thumbs.db
 
 # Secrets
 appsettings.Development.json
+
+# Scripts
+/scripts/ImportacionDemo/
+/scripts/PruebasCasos/*.csv
+/scripts/PruebasCatalogos/*.csv
+/contexto-*.zip

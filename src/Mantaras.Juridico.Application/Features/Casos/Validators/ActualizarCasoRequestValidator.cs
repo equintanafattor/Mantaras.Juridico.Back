@@ -21,6 +21,20 @@ public sealed class ActualizarCasoRequestValidator : AbstractValidator<Actualiza
             .MaximumLength(200)
             .WithMessage("El tipo de trámite no puede superar los 200 caracteres.");
 
+        RuleFor(x => x.NumeroExpedienteAnses)
+            .MaximumLength(100)
+            .WithMessage("El número de expediente ANSES no puede superar los 100 caracteres.");
+
+        RuleFor(x => x.TipoBeneficioId)
+            .GreaterThan(0L)
+            .When(x => x.TipoBeneficioId.HasValue)
+            .WithMessage("El identificador del tipo de beneficio debe ser mayor que cero.");
+
+        RuleFor(x => x.TipoExpedienteAdministrativoId)
+            .GreaterThan(0L)
+            .When(x => x.TipoExpedienteAdministrativoId.HasValue)
+            .WithMessage("El identificador del tipo de expediente administrativo debe ser mayor que cero.");
+
         RuleFor(x => x.Clientes)
             .Cascade(CascadeMode.Stop)
             .NotEmpty()

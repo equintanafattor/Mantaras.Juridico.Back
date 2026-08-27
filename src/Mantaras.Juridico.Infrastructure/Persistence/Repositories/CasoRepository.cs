@@ -17,7 +17,10 @@ public sealed class CasoRepository : ICasoRepository
     public Task<Caso?> ObtenerPorIdAsync(long casoId, CancellationToken cancellationToken = default)
     {
         return _dbContext
-            .Casos.Include(x => x.Clientes)
+            .Casos
+            .Include(x => x.TipoBeneficio)
+            .Include(x => x.TipoExpedienteAdministrativo)
+            .Include(x => x.Clientes)
                 .ThenInclude(x => x.Cliente)
             .FirstOrDefaultAsync(x => x.CasoId == casoId, cancellationToken);
     }
@@ -29,6 +32,8 @@ public sealed class CasoRepository : ICasoRepository
     {
         return _dbContext
             .Casos.AsNoTracking()
+            .Include(x => x.TipoBeneficio)
+            .Include(x => x.TipoExpedienteAdministrativo)
             .Include(x => x.Clientes)
                 .ThenInclude(x => x.Cliente)
             .Include(x => x.Expedientes)
@@ -52,10 +57,13 @@ public sealed class CasoRepository : ICasoRepository
         var query = ConstruirConsulta(busqueda, faseInterna, soloActivos);
 
         return await query
+            .Include(x => x.TipoBeneficio)
+            .Include(x => x.TipoExpedienteAdministrativo)
             .Include(x => x.Clientes)
                 .ThenInclude(x => x.Cliente)
             .OrderByDescending(x => x.FechaCreacion)
             .ThenBy(x => x.Titulo)
+            .ThenBy(x => x.CasoId)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .AsNoTracking()
@@ -113,6 +121,8 @@ public sealed class CasoRepository : ICasoRepository
             query = query.Where(x =>
                 EF.Functions.ILike(x.Titulo, $"%{termino}%")
                 || (x.TipoTramite != null && EF.Functions.ILike(x.TipoTramite, $"%{termino}%"))
+                || (x.NumeroExpedienteAnses != null
+                    && EF.Functions.ILike(x.NumeroExpedienteAnses, $"%{termino}%"))
                 || x.Clientes.Any(relacion =>
                     EF.Functions.ILike(relacion.Cliente.Nombre, $"%{termino}%")
                     || EF.Functions.ILike(relacion.Cliente.Apellido, $"%{termino}%")

@@ -12,6 +12,20 @@ public sealed class CasoClienteDetalleResponse
 
     public string? TipoTramite { get; set; }
 
+    public string? NumeroExpedienteAnses { get; set; }
+
+    public long? TipoBeneficioId { get; set; }
+
+    public string? TipoBeneficioNombre { get; set; }
+
+    public bool? TipoBeneficioActivo { get; set; }
+
+    public long? TipoExpedienteAdministrativoId { get; set; }
+
+    public string? TipoExpedienteAdministrativoNombre { get; set; }
+
+    public bool? TipoExpedienteAdministrativoActivo { get; set; }
+
     public TipoParticipacionCliente TipoParticipacion { get; set; }
 
     public bool EsPrincipal { get; set; }

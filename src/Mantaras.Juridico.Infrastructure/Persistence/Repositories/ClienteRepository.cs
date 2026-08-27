@@ -35,6 +35,12 @@ public class ClienteRepository : IClienteRepository
             .Include(cliente => cliente.Casos)
                 .ThenInclude(casoCliente => casoCliente.Caso)
                     .ThenInclude(caso => caso.Expedientes)
+            .Include(cliente => cliente.Casos)
+                .ThenInclude(casoCliente => casoCliente.Caso)
+                    .ThenInclude(caso => caso.TipoBeneficio)
+            .Include(cliente => cliente.Casos)
+                .ThenInclude(casoCliente => casoCliente.Caso)
+                    .ThenInclude(caso => caso.TipoExpedienteAdministrativo)
             .FirstOrDefaultAsync(cliente => cliente.ClienteId == clienteId, cancellationToken);
     }
 

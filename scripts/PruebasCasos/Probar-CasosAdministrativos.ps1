@@ -128,6 +128,29 @@ function Comprobar-Administrativos {
     }
 }
 
+function Comprobar-CasoEnCliente {
+    param($CasoEsperado, $Numero, $Beneficio, $Tipo, [string]$Etiqueta)
+    $detalle = Pedir "GET" "/api/clientes/$script:clienteId"
+    Comprobar "$Etiqueta / cliente y coleccion de casos" ($detalle.clienteId -eq $script:clienteId -and $detalle.PSObject.Properties.Name -contains "casos")
+    $coincidencias = @($detalle.casos | Where-Object { $_.casoId -eq $CasoEsperado.casoId })
+    Comprobar "$Etiqueta / caso vinculado una sola vez" ($coincidencias.Count -eq 1)
+    $anidado = $coincidencias[0]
+    Comprobar-Administrativos $anidado $Numero $Beneficio $Tipo "$Etiqueta / desde cliente"
+    Comprobar "$Etiqueta / datos previos del caso conservados" ($anidado.titulo -ceq $CasoEsperado.titulo -and $anidado.faseInterna -eq $CasoEsperado.faseInterna -and $anidado.tipoTramite -ceq $CasoEsperado.tipoTramite -and $anidado.activo -eq $CasoEsperado.activo)
+    Comprobar "$Etiqueta / participacion y principal" ($anidado.tipoParticipacion -eq $script:participacion -and $anidado.esPrincipal -eq $true)
+    Comprobar "$Etiqueta / expedientes presentes" ($anidado.PSObject.Properties.Name -contains "expedientes")
+    $esperados = @($CasoEsperado.expedientes)
+    $recibidos = @($anidado.expedientes)
+    Comprobar "$Etiqueta / cantidad de expedientes conservada" ($recibidos.Count -eq $esperados.Count)
+    foreach ($exp in $esperados) {
+        $coincidentes = @($recibidos | Where-Object { $_.expedienteId -eq $exp.expedienteId })
+        Comprobar "$Etiqueta / expediente $($exp.expedienteId) conservado" ($coincidentes.Count -eq 1)
+        foreach ($campo in @("expedientePadreId", "numeroExpediente", "caratula", "juzgado", "fechaInicio", "estadoLegal", "activo")) {
+            Comprobar "$Etiqueta / expediente $campo" ($coincidentes[0].PSObject.Properties.Name -contains $campo -and $coincidentes[0].$campo -ceq $exp.$campo)
+        }
+    }
+}
+
 function Nuevo-Payload {
     param([string]$Sufijo)
     return @{
@@ -191,7 +214,7 @@ function Comprobar-RechazoAltas {
     Comprobar "$Etiqueta / sin expediente huerfano" ($r.totalItems -eq 0)
 }
 
-Write-Host "Prueba Casos administrativos v1"
+Write-Host "Prueba Casos administrativos v2 (incluye detalle de cliente)"
 Write-Host "API: $ApiBaseUrl"
 Write-Host "Marca: $prefijo"
 Write-Host "Solo desarrollo. Se crearan registros propios y se intentara su baja logica al terminar."
@@ -228,6 +251,7 @@ try {
     Comprobar-Administrativos $r $null $null $null "POST sin nuevos campos"
     $r = Pedir "GET" "/api/casos/$idLegado"
     Comprobar-Administrativos $r $null $null $null "GET legado"
+    Comprobar-CasoEnCliente $r $null $null $null "GET legado"
 
     $payload = Nuevo-Payload "COMPLETO"
     $payload.numeroExpedienteAnses = "  $anses  "
@@ -238,6 +262,7 @@ try {
     Comprobar-Administrativos $r $anses $b1 $t1 "POST completo"
     $r = Pedir "GET" "/api/casos/$idCaso"
     Comprobar-Administrativos $r $anses $b1 $t1 "GET completo"
+    Comprobar-CasoEnCliente $r $anses $b1 $t1 "GET completo"
     $r = Pedir "GET" "/api/casos?busqueda=$anses&pageSize=100"
     Comprobar "Busqueda exclusiva por ANSES" ($r.totalItems -eq 1 -and @($r.items).Count -eq 1 -and @($r.items)[0].casoId -eq $idCaso)
     Comprobar-Administrativos (@($r.items)[0]) $anses $b1 $t1 "Listado"
@@ -252,6 +277,7 @@ try {
     Comprobar-Administrativos $r "OTRO-$marca" $b1 $t1 "POST conjunto"
     $r = Pedir "GET" "/api/casos/$idCompuesto"
     Comprobar-Administrativos $r "OTRO-$marca" $b1 $t1 "GET conjunto"
+    Comprobar-CasoEnCliente $r "OTRO-$marca" $b1 $t1 "GET conjunto"
     Comprobar "Principal vinculado" (@($r.expedientes | Where-Object { $_.expedienteId -eq $idExpediente -and $null -eq $_.expedientePadreId -and $_.tipoExpediente -ceq "Principal" }).Count -eq 1)
 
     $payload = Nuevo-Payload "EDITADO"
@@ -262,44 +288,53 @@ try {
     Comprobar-Administrativos $r "EDITADO-$marca" $b2 $t2 "PUT completo"
     $r = Pedir "GET" "/api/casos/$idCaso"
     Comprobar-Administrativos $r "EDITADO-$marca" $b2 $t2 "PUT persistido"
+    Comprobar-CasoEnCliente $r "EDITADO-$marca" $b2 $t2 "PUT persistido"
     $payload = Nuevo-Payload "OMISION"
     $null = Pedir "PUT" "/api/casos/$idCaso" $payload
     $r = Pedir "GET" "/api/casos/$idCaso"
     Comprobar-Administrativos $r "EDITADO-$marca" $b2 $t2 "Omitir conserva"
+    Comprobar-CasoEnCliente $r "EDITADO-$marca" $b2 $t2 "Omitir conserva"
 
     $payload.tipoBeneficioId = $b1.Id
     $null = Pedir "PUT" "/api/casos/$idCaso" $payload
     $r = Pedir "GET" "/api/casos/$idCaso"
     Comprobar-Administrativos $r "EDITADO-$marca" $b1 $t2 "Solo beneficio"
+    Comprobar-CasoEnCliente $r "EDITADO-$marca" $b1 $t2 "Solo beneficio"
     $payload = Nuevo-Payload "SOLO TIPO"
     $payload.tipoExpedienteAdministrativoId = $t1.Id
     $null = Pedir "PUT" "/api/casos/$idCaso" $payload
     $r = Pedir "GET" "/api/casos/$idCaso"
     Comprobar-Administrativos $r "EDITADO-$marca" $b1 $t1 "Solo tipo"
+    Comprobar-CasoEnCliente $r "EDITADO-$marca" $b1 $t1 "Solo tipo"
     $payload = Nuevo-Payload "SOLO NUMERO"
     $payload.numeroExpedienteAnses = "A" * 100
     $null = Pedir "PUT" "/api/casos/$idCaso" $payload
     $r = Pedir "GET" "/api/casos/$idCaso"
     Comprobar-Administrativos $r ("A" * 100) $b1 $t1 "ANSES 100 caracteres"
+    Comprobar-CasoEnCliente $r ("A" * 100) $b1 $t1 "ANSES 100 caracteres"
     $payload.numeroExpedienteAnses = "   "
     $null = Pedir "PUT" "/api/casos/$idCaso" $payload
     $r = Pedir "GET" "/api/casos/$idCaso"
     Comprobar-Administrativos $r $null $b1 $t1 "Espacios limpian numero"
+    Comprobar-CasoEnCliente $r $null $b1 $t1 "Espacios limpian numero"
 
     Cambiar-EstadoCatalogo $b1 $false
     Cambiar-EstadoCatalogo $t1 $false
     $r = Pedir "GET" "/api/casos/$idCaso"
     Comprobar-Administrativos $r $null $b1 $t1 "Historicos visibles"
+    Comprobar-CasoEnCliente $r $null $b1 $t1 "Historicos visibles"
     $payload = Nuevo-Payload "HISTORICOS OMITIDOS"
     $null = Pedir "PUT" "/api/casos/$idCaso" $payload
     $r = Pedir "GET" "/api/casos/$idCaso"
     Comprobar-Administrativos $r $null $b1 $t1 "Conservar historicos omitidos"
+    Comprobar-CasoEnCliente $r $null $b1 $t1 "Conservar historicos omitidos"
     $payload.tipoBeneficioId = $b1.Id
     $payload.tipoExpedienteAdministrativoId = $t1.Id
     $payload.numeroExpedienteAnses = "BORRAR-$marca"
     $null = Pedir "PUT" "/api/casos/$idCaso" $payload
     $r = Pedir "GET" "/api/casos/$idCaso"
     Comprobar-Administrativos $r "BORRAR-$marca" $b1 $t1 "Conservar historicos explicitos"
+    Comprobar-CasoEnCliente $r "BORRAR-$marca" $b1 $t1 "Conservar historicos explicitos"
 
     $invalidos = @(
         @{ Nombre = "BENEFICIO INACTIVO"; Campo = "tipoBeneficioId"; Valor = $b1.Id },
@@ -330,6 +365,7 @@ try {
     Comprobar-Administrativos $r $null $null $null "PUT null explicito"
     $r = Pedir "GET" "/api/casos/$idCaso"
     Comprobar-Administrativos $r $null $null $null "Null persistido"
+    Comprobar-CasoEnCliente $r $null $null $null "Null persistido"
     foreach ($invalido in $invalidos[0..1]) {
         $payload = Nuevo-Payload "REASIGNAR INACTIVO"
         $payload[$invalido.Campo] = $invalido.Valor
@@ -347,6 +383,13 @@ try {
     }
     $r = Pedir "GET" "/api/casos/$idCaso"
     Comprobar-Administrativos $r $null $b1 $t1 "Reactivados y nombres actualizados"
+    Comprobar-CasoEnCliente $r $null $b1 $t1 "Reactivados y nombres actualizados"
+
+    # Verificar tambien que el detalle del cliente no pierda sus casos inactivos.
+    $null = Pedir "DELETE" "/api/casos/$idLegado" $null 204
+    $r = Pedir "GET" "/api/casos/$idLegado"
+    Comprobar "Caso de prueba inactivo" ($r.activo -eq $false)
+    Comprobar-CasoEnCliente $r $null $null $null "Caso inactivo visible"
 }
 catch {
     $fallo = $_.Exception.Message

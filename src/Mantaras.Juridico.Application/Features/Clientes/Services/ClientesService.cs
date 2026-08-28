@@ -230,6 +230,34 @@ public class ClientesService : IClientesService
         };
     }
 
+    public async Task<Result<ClaveSeguridadSocialResponse>> ObtenerClaveSeguridadSocialAsync(
+    long clienteId,
+    CancellationToken cancellationToken = default
+    )
+    {
+        var cliente = await _clienteRepository.ObtenerPorIdAsync(
+            clienteId,
+            cancellationToken
+        );
+
+        if (cliente is null)
+        {
+            return Result<ClaveSeguridadSocialResponse>.Failure(
+                ClienteErrors.NoEncontrado
+            );
+        }
+
+        return Result<ClaveSeguridadSocialResponse>.Success(
+            new ClaveSeguridadSocialResponse
+            {
+                ClaveSeguridadSocial =
+                    string.IsNullOrWhiteSpace(cliente.ClaveSeguridadSocial)
+                        ? null
+                        : cliente.ClaveSeguridadSocial,
+            }
+        );
+    }
+
     private static ClienteResponse MapearResponse(Cliente cliente)
     {
         return new ClienteResponse

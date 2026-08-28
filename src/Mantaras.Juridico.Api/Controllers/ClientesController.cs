@@ -5,6 +5,7 @@ using Mantaras.Juridico.Application.Features.Clientes;
 using Mantaras.Juridico.Application.Features.Clientes.Requests;
 using Mantaras.Juridico.Application.Features.Clientes.Responses;
 using Mantaras.Juridico.Application.Features.Clientes.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Mantaras.Juridico.Api.Controllers;
@@ -135,6 +136,36 @@ public class ClientesController : ControllerBase
         var response = await _clientesService.BuscarAsync(request, cancellationToken);
 
         return Ok(response);
+    }
+
+    [Authorize]
+    [HttpGet("{clienteId:long}/clave-seguridad-social")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    [ProducesResponseType(
+    typeof(ClaveSeguridadSocialResponse),
+    StatusCodes.Status200OK
+    )]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(
+    typeof(ApiErrorResponse),
+    StatusCodes.Status404NotFound
+    )]
+    public async Task<ActionResult<ClaveSeguridadSocialResponse>> ObtenerClaveSeguridadSocial(
+    long clienteId,
+    CancellationToken cancellationToken
+    )
+    {
+        var result = await _clientesService.ObtenerClaveSeguridadSocialAsync(
+            clienteId,
+            cancellationToken
+        );
+
+        if (result.IsFailure)
+        {
+            return NotFound(CrearErrorResponse(result.Errors));
+        }
+
+        return Ok(result.Value);
     }
 
     private static ApiErrorResponse CrearErrorResponse(IReadOnlyCollection<Error> errors)

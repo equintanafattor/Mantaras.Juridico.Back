@@ -37,4 +37,9 @@ public interface IClientesService
         BuscarClientesRequest request,
         CancellationToken cancellationToken = default
     );
+
+    Task<Result<ClaveSeguridadSocialResponse>> ObtenerClaveSeguridadSocialAsync(
+        long clienteId,
+        CancellationToken cancellationToken = default
+    );
 }

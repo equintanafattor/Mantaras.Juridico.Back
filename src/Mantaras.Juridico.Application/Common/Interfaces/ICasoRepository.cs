@@ -36,4 +36,18 @@ public interface ICasoRepository
         long casoId,
         CancellationToken cancellationToken = default
     );
+
+    Task<Caso?> ObtenerConHojaResumenAsync(
+    long casoId,
+    CancellationToken cancellationToken = default
+);
+
+    Task AgregarHojaResumenAsync(
+        HojaResumenCaso hoja,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<bool> GuardarHojaResumenAsync(
+        CancellationToken cancellationToken = default
+    );
 }

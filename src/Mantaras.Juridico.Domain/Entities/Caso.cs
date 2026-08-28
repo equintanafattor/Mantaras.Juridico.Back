@@ -23,6 +23,8 @@ public class Caso : AuditableEntity
 
     public TipoExpedienteAdministrativo? TipoExpedienteAdministrativo { get; set; }
 
+    public HojaResumenCaso? HojaResumen { get; set; }
+
     public ICollection<Observacion> HistorialObservaciones { get; set; } =
         new List<Observacion>();
 

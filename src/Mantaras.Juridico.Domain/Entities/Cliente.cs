@@ -32,4 +32,10 @@ public class Cliente : AuditableEntity
     new List<Observacion>();
 
     public ICollection<CasoCliente> Casos { get; set; } = new List<CasoCliente>();
+
+    public ICollection<RelacionFamiliar> RelacionesFamiliaresComoA { get; set; } =
+    new List<RelacionFamiliar>();
+
+    public ICollection<RelacionFamiliar> RelacionesFamiliaresComoB { get; set; } =
+        new List<RelacionFamiliar>();
 }

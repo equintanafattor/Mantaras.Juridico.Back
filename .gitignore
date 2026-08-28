@@ -34,3 +34,7 @@ appsettings.Development.json
 /scripts/PruebasCasos/*.csv
 /scripts/PruebasCatalogos/*.csv
 /contexto-*.zip
+
+# Diarios generados por las pruebas
+/scripts/PruebasClientes/registros-familia-*.csv
+/scripts/PruebasCasos/registros-hoja-*.csv

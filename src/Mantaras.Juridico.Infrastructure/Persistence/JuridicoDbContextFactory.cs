@@ -24,6 +24,9 @@ public class JuridicoDbContextFactory
             .AddJsonFile(
                 "appsettings.Development.json",
                 optional: true)
+            .AddUserSecrets(
+                "9f13f861-1619-4119-99b6-f287886ea1d7",
+                reloadOnChange: false)
             .AddEnvironmentVariables()
             .Build();
 

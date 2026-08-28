@@ -13,6 +13,9 @@ public class JuridicoDbContext : IdentityDbContext<UsuarioIdentity, IdentityRole
 
     public DbSet<Cliente> Clientes => Set<Cliente>();
 
+    public DbSet<RelacionFamiliar> RelacionesFamiliares =>
+        Set<RelacionFamiliar>();
+
     public DbSet<Expediente> Expedientes => Set<Expediente>();
 
     public DbSet<Caso> Casos => Set<Caso>();
@@ -25,6 +28,9 @@ public class JuridicoDbContext : IdentityDbContext<UsuarioIdentity, IdentityRole
 
     public DbSet<TipoExpedienteAdministrativo> TiposExpedienteAdministrativo =>
         Set<TipoExpedienteAdministrativo>();
+
+    public DbSet<HojaResumenCaso> HojasResumenCasos =>
+        Set<HojaResumenCaso>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

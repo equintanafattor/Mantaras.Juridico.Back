@@ -163,6 +163,8 @@ public static class DependencyInjection
         services.AddScoped<ITipoBeneficioRepository, TipoBeneficioRepository>();
         services.AddScoped<ITipoExpedienteAdministrativoRepository, TipoExpedienteAdministrativoRepository>();
 
+        services.AddScoped<IRelacionFamiliarRepository, RelacionFamiliarRepository>();
+
         return services;
     }
 }

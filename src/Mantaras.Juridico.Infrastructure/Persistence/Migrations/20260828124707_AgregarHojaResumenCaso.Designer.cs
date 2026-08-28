@@ -3,6 +3,7 @@ using System;
 using Mantaras.Juridico.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(JuridicoDbContext))]
-    partial class JuridicoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260828124707_AgregarHojaResumenCaso")]
+    partial class AgregarHojaResumenCaso
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -383,57 +386,6 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                     b.ToTable("Observaciones", null, t =>
                         {
                             t.HasCheckConstraint("CK_Observaciones_UnPropietario", "num_nonnulls(\"ClienteId\", \"CasoId\", \"ExpedienteId\") = 1");
-                        });
-                });
-
-            modelBuilder.Entity("Mantaras.Juridico.Domain.Entities.RelacionFamiliar", b =>
-                {
-                    b.Property<long>("RelacionFamiliarId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("RelacionFamiliarId"));
-
-                    b.Property<bool>("Activo")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
-                    b.Property<long>("ClienteAId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("ClienteBId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("FechaCreacion")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("FechaModificacion")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("ParentescoDeB")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("UsuarioCreacion")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("UsuarioModificacion")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.HasKey("RelacionFamiliarId");
-
-                    b.HasIndex("ClienteBId");
-
-                    b.HasIndex("ClienteAId", "ClienteBId")
-                        .IsUnique();
-
-                    b.ToTable("RelacionesFamiliares", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_RelacionesFamiliares_ClientesOrdenados", "\"ClienteAId\" < \"ClienteBId\"");
-
-                            t.HasCheckConstraint("CK_RelacionesFamiliares_ParentescoValido", "\"ParentescoDeB\" BETWEEN 1 AND 10");
                         });
                 });
 
@@ -824,25 +776,6 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                     b.Navigation("Expediente");
                 });
 
-            modelBuilder.Entity("Mantaras.Juridico.Domain.Entities.RelacionFamiliar", b =>
-                {
-                    b.HasOne("Mantaras.Juridico.Domain.Entities.Cliente", "ClienteA")
-                        .WithMany("RelacionesFamiliaresComoA")
-                        .HasForeignKey("ClienteAId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Mantaras.Juridico.Domain.Entities.Cliente", "ClienteB")
-                        .WithMany("RelacionesFamiliaresComoB")
-                        .HasForeignKey("ClienteBId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("ClienteA");
-
-                    b.Navigation("ClienteB");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<long>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<long>", null)
@@ -910,10 +843,6 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                     b.Navigation("Casos");
 
                     b.Navigation("HistorialObservaciones");
-
-                    b.Navigation("RelacionesFamiliaresComoA");
-
-                    b.Navigation("RelacionesFamiliaresComoB");
                 });
 
             modelBuilder.Entity("Mantaras.Juridico.Domain.Entities.Expediente", b =>

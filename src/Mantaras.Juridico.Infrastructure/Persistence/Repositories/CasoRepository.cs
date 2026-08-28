@@ -2,6 +2,7 @@ using Mantaras.Juridico.Application.Common.Interfaces;
 using Mantaras.Juridico.Domain.Entities;
 using Mantaras.Juridico.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Mantaras.Juridico.Infrastructure.Persistence.Repositories;
 
@@ -139,5 +140,49 @@ public sealed class CasoRepository : ICasoRepository
         }
 
         return query;
+    }
+
+    public Task<Caso?> ObtenerConHojaResumenAsync(
+    long casoId,
+    CancellationToken cancellationToken = default
+)
+    {
+        return _dbContext.Casos
+            .Include(x => x.HojaResumen)
+            .FirstOrDefaultAsync(
+                x => x.CasoId == casoId,
+                cancellationToken
+            );
+    }
+
+    public async Task AgregarHojaResumenAsync(
+        HojaResumenCaso hoja,
+        CancellationToken cancellationToken = default
+    )
+    {
+        await _dbContext.HojasResumenCasos.AddAsync(
+            hoja,
+            cancellationToken
+        );
+    }
+
+    public async Task<bool> GuardarHojaResumenAsync(
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            return true;
+        }
+        catch (DbUpdateException exception) when (
+            exception.InnerException is PostgresException postgres
+            && postgres.SqlState == PostgresErrorCodes.UniqueViolation
+            && postgres.ConstraintName == "PK_HojasResumenCasos"
+        )
+        {
+            return false;
+        }
     }
 }

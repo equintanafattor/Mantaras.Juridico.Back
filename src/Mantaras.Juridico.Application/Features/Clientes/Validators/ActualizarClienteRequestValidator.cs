@@ -31,6 +31,21 @@ public sealed class ActualizarClienteRequestValidator : AbstractValidator<Actual
             .MaximumLength(500)
             .WithMessage("La Clave de Seguridad Social no puede superar los 500 caracteres.");
 
+        RuleFor(x => x.DerivadoPor)
+            .MaximumLength(200)
+            .WithMessage("El nombre del abogado derivante no puede superar los 200 caracteres.");
+
+        RuleFor(x => x.DerivadoPorTelefono)
+            .MaximumLength(50)
+            .WithMessage("El teléfono del abogado derivante no puede superar los 50 caracteres.");
+
+        RuleFor(x => x.DerivadoPorEmail)
+            .MaximumLength(200)
+            .WithMessage("El email del abogado derivante no puede superar los 200 caracteres.")
+            .EmailAddress()
+            .When(x => !string.IsNullOrWhiteSpace(x.DerivadoPorEmail))
+            .WithMessage("El email del abogado derivante no tiene un formato válido.");
+
         RuleFor(x => x.Telefono)
             .MaximumLength(50)
             .WithMessage("El teléfono no puede superar los 50 caracteres.");

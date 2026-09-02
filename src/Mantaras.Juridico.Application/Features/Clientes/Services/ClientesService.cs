@@ -49,6 +49,9 @@ public class ClientesService : IClientesService
             Dni = dni,
             Cuil = cuil,
             ClaveSeguridadSocial = NormalizarOpcional(request.ClaveSeguridadSocial),
+            DerivadoPor = NormalizarOpcional(request.DerivadoPor),
+            DerivadoPorTelefono = NormalizarOpcional(request.DerivadoPorTelefono),
+            DerivadoPorEmail = NormalizarOpcional(request.DerivadoPorEmail),
             FechaNacimiento = request.FechaNacimiento,
             Telefono = NormalizarOpcional(request.Telefono),
             Email = NormalizarOpcional(request.Email),
@@ -126,6 +129,9 @@ public class ClientesService : IClientesService
         {
             cliente.ClaveSeguridadSocial = nuevaClaveSeguridadSocial;
         }
+        cliente.DerivadoPor = NormalizarOpcional(request.DerivadoPor);
+        cliente.DerivadoPorTelefono = NormalizarOpcional(request.DerivadoPorTelefono);
+        cliente.DerivadoPorEmail = NormalizarOpcional(request.DerivadoPorEmail);
         cliente.FechaNacimiento = request.FechaNacimiento;
         cliente.Telefono = NormalizarOpcional(request.Telefono);
         cliente.Email = NormalizarOpcional(request.Email);
@@ -268,6 +274,9 @@ public class ClientesService : IClientesService
             NombreCompleto = $"{cliente.Apellido}, {cliente.Nombre}",
             Dni = cliente.Dni,
             Cuil = cliente.Cuil,
+            DerivadoPor = cliente.DerivadoPor,
+            DerivadoPorTelefono = cliente.DerivadoPorTelefono,
+            DerivadoPorEmail = cliente.DerivadoPorEmail,
             FechaNacimiento = cliente.FechaNacimiento,
             Telefono = cliente.Telefono,
             Email = cliente.Email,
@@ -289,6 +298,9 @@ public class ClientesService : IClientesService
             NombreCompleto = $"{cliente.Apellido}, {cliente.Nombre}",
             Dni = cliente.Dni,
             Cuil = cliente.Cuil,
+            DerivadoPor = cliente.DerivadoPor,
+            DerivadoPorTelefono = cliente.DerivadoPorTelefono,
+            DerivadoPorEmail = cliente.DerivadoPorEmail,
             FechaNacimiento = cliente.FechaNacimiento,
             Telefono = cliente.Telefono,
             Email = cliente.Email,

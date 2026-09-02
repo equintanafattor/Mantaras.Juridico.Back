@@ -16,6 +16,12 @@ public class Cliente : AuditableEntity
 
     public string? ClaveSeguridadSocial { get; set; }
 
+    public string? DerivadoPor { get; set; }
+
+    public string? DerivadoPorTelefono { get; set; }
+
+    public string? DerivadoPorEmail { get; set; }
+
     public DateTime? FechaNacimiento { get; set; }
 
     public string? Telefono { get; set; }

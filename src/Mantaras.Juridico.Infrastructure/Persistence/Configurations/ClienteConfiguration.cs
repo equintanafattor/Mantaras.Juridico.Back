@@ -24,6 +24,12 @@ public class ClienteConfiguration : IEntityTypeConfiguration<Cliente>
 
         builder.Property(x => x.ClaveSeguridadSocial).HasMaxLength(500);
 
+        builder.Property(x => x.DerivadoPor).HasMaxLength(200);
+
+        builder.Property(x => x.DerivadoPorTelefono).HasMaxLength(50);
+
+        builder.Property(x => x.DerivadoPorEmail).HasMaxLength(200);
+
         builder.Property(x => x.Telefono).HasMaxLength(50);
 
         builder.Property(x => x.Email).HasMaxLength(200);

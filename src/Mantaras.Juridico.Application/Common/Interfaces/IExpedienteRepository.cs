@@ -45,7 +45,7 @@ public interface IExpedienteRepository
     );
 
     Task<bool> ExistePrincipalAsync(
-        long casoId,
+        IReadOnlyCollection<long> casoIds,
         long? expedienteIdExcluir = null,
         CancellationToken cancellationToken = default
     );

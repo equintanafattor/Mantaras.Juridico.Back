@@ -1,6 +1,5 @@
 using Mantaras.Juridico.Application.Common.Interfaces;
 using Mantaras.Juridico.Domain.Entities;
-using Mantaras.Juridico.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -38,6 +37,7 @@ public sealed class CasoRepository : ICasoRepository
             .Include(x => x.Clientes)
                 .ThenInclude(x => x.Cliente)
             .Include(x => x.Expedientes)
+                .ThenInclude(x => x.Expediente)
             .FirstOrDefaultAsync(x => x.CasoId == casoId, cancellationToken);
     }
 
@@ -46,9 +46,20 @@ public sealed class CasoRepository : ICasoRepository
         await _dbContext.Casos.AddAsync(caso, cancellationToken);
     }
 
+    public async Task<IReadOnlyCollection<Caso>> ObtenerActivosPorIdsAsync(
+        IReadOnlyCollection<long> casoIds,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return await _dbContext.Casos
+            .Where(x => casoIds.Contains(x.CasoId) && x.Activo)
+            .Include(x => x.TipoBeneficio)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyCollection<Caso>> BuscarAsync(
         string? busqueda,
-        FaseCaso? faseInterna,
+        string? faseInterna,
         bool soloActivos,
         int page,
         int pageSize,
@@ -73,7 +84,7 @@ public sealed class CasoRepository : ICasoRepository
 
     public Task<int> ContarAsync(
         string? busqueda,
-        FaseCaso? faseInterna,
+        string? faseInterna,
         bool soloActivos,
         CancellationToken cancellationToken = default
     )
@@ -86,8 +97,8 @@ public sealed class CasoRepository : ICasoRepository
         CancellationToken cancellationToken = default
     )
     {
-        return _dbContext.Expedientes.AnyAsync(
-            x => x.CasoId == casoId && x.Activo,
+        return _dbContext.CasosExpedientes.AnyAsync(
+            x => x.CasoId == casoId && x.Expediente.Activo,
             cancellationToken
         );
     }
@@ -99,7 +110,7 @@ public sealed class CasoRepository : ICasoRepository
 
     private IQueryable<Caso> ConstruirConsulta(
         string? busqueda,
-        FaseCaso? faseInterna,
+        string? faseInterna,
         bool soloActivos
     )
     {
@@ -110,9 +121,9 @@ public sealed class CasoRepository : ICasoRepository
             query = query.Where(x => x.Activo);
         }
 
-        if (faseInterna.HasValue)
+        if (!string.IsNullOrWhiteSpace(faseInterna))
         {
-            query = query.Where(x => x.FaseInterna == faseInterna.Value);
+            query = query.Where(x => x.FaseInterna == faseInterna.Trim());
         }
 
         if (!string.IsNullOrWhiteSpace(busqueda))
@@ -124,6 +135,8 @@ public sealed class CasoRepository : ICasoRepository
                 || (x.TipoTramite != null && EF.Functions.ILike(x.TipoTramite, $"%{termino}%"))
                 || (x.NumeroExpedienteAnses != null
                     && EF.Functions.ILike(x.NumeroExpedienteAnses, $"%{termino}%"))
+                || (x.NumeroBeneficio != null
+                    && EF.Functions.ILike(x.NumeroBeneficio, $"%{termino}%"))
                 || x.Clientes.Any(relacion =>
                     EF.Functions.ILike(relacion.Cliente.Nombre, $"%{termino}%")
                     || EF.Functions.ILike(relacion.Cliente.Apellido, $"%{termino}%")

@@ -92,11 +92,18 @@ public sealed class PanelService : IPanelService
         return new ActividadRecienteResponse
         {
             Tipo = "Expediente",
-            CasoId = expediente.CasoId,
+            CasoId = expediente.Casos
+                .OrderBy(x => x.CasoId)
+                .Select(x => x.CasoId)
+                .First(),
             ExpedienteId = expediente.ExpedienteId,
             Titulo = expediente.Caratula,
             Referencia =
-                expediente.NumeroExpediente ?? expediente.Caso.Titulo,
+                expediente.NumeroExpediente
+                ?? expediente.Casos
+                    .OrderBy(x => x.CasoId)
+                    .Select(x => x.Caso.Titulo)
+                    .First(),
             FechaActividad =
                 expediente.FechaModificacion
                 ?? expediente.FechaCreacion,

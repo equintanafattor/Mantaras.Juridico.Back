@@ -9,9 +9,11 @@ public sealed class CrearExpedienteRequestValidator
 {
     public CrearExpedienteRequestValidator()
     {
-        RuleFor(x => x.CasoId)
-            .GreaterThan(0)
-            .WithMessage("El caso informado no es válido.");
+        RuleFor(x => x.CasoIds)
+            .NotEmpty()
+            .WithMessage("Debe asociar al menos un expediente administrativo.")
+            .Must(ids => ids.All(id => id > 0) && ids.Distinct().Count() == ids.Count)
+            .WithMessage("Los expedientes administrativos informados no son válidos.");
 
         RuleFor(x => x.ExpedientePadreId)
             .GreaterThan(0)

@@ -319,6 +319,7 @@ public class ClientesService : IClientesService
                     FaseInterna = casoCliente.Caso.FaseInterna,
                     TipoTramite = casoCliente.Caso.TipoTramite,
                     NumeroExpedienteAnses = casoCliente.Caso.NumeroExpedienteAnses,
+                    NumeroBeneficio = casoCliente.Caso.NumeroBeneficio,
                     TipoBeneficioId = casoCliente.Caso.TipoBeneficioId,
                     TipoBeneficioNombre = casoCliente.Caso.TipoBeneficio?.Nombre,
                     TipoBeneficioActivo = casoCliente.Caso.TipoBeneficio?.Activo,
@@ -329,7 +330,8 @@ public class ClientesService : IClientesService
                     EsPrincipal = casoCliente.EsPrincipal,
                     Activo = casoCliente.Caso.Activo,
                     Expedientes = casoCliente
-                        .Caso.Expedientes.OrderBy(expediente => expediente.FechaInicio)
+                        .Caso.Expedientes.Select(relacion => relacion.Expediente)
+                        .OrderBy(expediente => expediente.FechaInicio)
                         .ThenBy(expediente => expediente.ExpedienteId)
                         .Select(expediente => new ExpedienteClienteDetalleResponse
                         {

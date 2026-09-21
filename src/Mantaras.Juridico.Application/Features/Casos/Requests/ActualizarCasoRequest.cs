@@ -1,12 +1,10 @@
-using Mantaras.Juridico.Domain.Enums;
-
 namespace Mantaras.Juridico.Application.Features.Casos.Requests;
 
 public sealed class ActualizarCasoRequest
 {
     public string Titulo { get; set; } = string.Empty;
 
-    public FaseCaso FaseInterna { get; set; }
+    public string FaseInterna { get; set; } = string.Empty;
 
     public string? TipoTramite { get; set; }
 
@@ -24,6 +22,20 @@ public sealed class ActualizarCasoRequest
     }
 
     internal bool NumeroExpedienteAnsesInformado { get; private set; }
+
+    private string? _numeroBeneficio;
+
+    public string? NumeroBeneficio
+    {
+        get => _numeroBeneficio;
+        set
+        {
+            _numeroBeneficio = value;
+            NumeroBeneficioInformado = true;
+        }
+    }
+
+    internal bool NumeroBeneficioInformado { get; private set; }
 
     private long? _tipoBeneficioId;
 

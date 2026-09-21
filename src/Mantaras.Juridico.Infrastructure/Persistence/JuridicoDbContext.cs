@@ -22,6 +22,10 @@ public class JuridicoDbContext : IdentityDbContext<UsuarioIdentity, IdentityRole
 
     public DbSet<CasoCliente> CasosClientes => Set<CasoCliente>();
 
+    public DbSet<CasoExpediente> CasosExpedientes => Set<CasoExpediente>();
+
+    public DbSet<OpcionCatalogo> OpcionesCatalogo => Set<OpcionCatalogo>();
+
     public DbSet<Observacion> Observaciones => Set<Observacion>();
 
     public DbSet<TipoBeneficio> TiposBeneficio => Set<TipoBeneficio>();

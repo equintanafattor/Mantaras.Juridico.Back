@@ -9,6 +9,12 @@ public sealed class ActualizarExpedienteRequestValidator
 {
     public ActualizarExpedienteRequestValidator()
     {
+        RuleFor(x => x.CasoIds)
+            .NotEmpty()
+            .WithMessage("Debe asociar al menos un expediente administrativo.")
+            .Must(ids => ids.All(id => id > 0) && ids.Distinct().Count() == ids.Count)
+            .WithMessage("Los expedientes administrativos informados no son válidos.");
+
         RuleFor(x => x.ExpedientePadreId)
             .GreaterThan(0)
             .When(x => x.ExpedientePadreId.HasValue)

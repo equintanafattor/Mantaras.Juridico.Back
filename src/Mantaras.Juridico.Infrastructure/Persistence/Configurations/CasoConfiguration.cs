@@ -14,11 +14,13 @@ public class CasoConfiguration : IEntityTypeConfiguration<Caso>
 
         builder.Property(x => x.Titulo).HasMaxLength(300).IsRequired();
 
-        builder.Property(x => x.FaseInterna).HasConversion<string>().HasMaxLength(50).IsRequired();
+        builder.Property(x => x.FaseInterna).HasMaxLength(200).IsRequired();
 
         builder.Property(x => x.TipoTramite).HasMaxLength(200);
 
         builder.Property(x => x.NumeroExpedienteAnses).HasMaxLength(100);
+
+        builder.Property(x => x.NumeroBeneficio).HasMaxLength(100);
 
         builder.Property(x => x.Activo).HasDefaultValue(true);
 
@@ -27,6 +29,8 @@ public class CasoConfiguration : IEntityTypeConfiguration<Caso>
         builder.HasIndex(x => x.FaseInterna);
 
         builder.HasIndex(x => x.NumeroExpedienteAnses);
+
+        builder.HasIndex(x => x.NumeroBeneficio);
 
         builder.HasIndex(x => x.TipoBeneficioId);
 
@@ -44,12 +48,6 @@ public class CasoConfiguration : IEntityTypeConfiguration<Caso>
             .WithMany(x => x.Casos)
             .HasForeignKey(x => x.TipoExpedienteAdministrativoId)
             .IsRequired(false)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder
-            .HasMany(x => x.Expedientes)
-            .WithOne(x => x.Caso)
-            .HasForeignKey(x => x.CasoId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(x => x.UsuarioCreacion).HasMaxLength(100);

@@ -1,5 +1,3 @@
-using Mantaras.Juridico.Domain.Enums;
-
 namespace Mantaras.Juridico.Application.Features.Casos.Responses;
 
 public sealed class CasoResponse
@@ -8,11 +6,13 @@ public sealed class CasoResponse
 
     public string Titulo { get; set; } = string.Empty;
 
-    public FaseCaso FaseInterna { get; set; }
+    public string FaseInterna { get; set; } = string.Empty;
 
     public string? TipoTramite { get; set; }
 
     public string? NumeroExpedienteAnses { get; set; }
+
+    public string? NumeroBeneficio { get; set; }
 
     public long? TipoBeneficioId { get; set; }
 

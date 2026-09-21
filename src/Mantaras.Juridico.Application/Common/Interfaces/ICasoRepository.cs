@@ -1,5 +1,4 @@
 using Mantaras.Juridico.Domain.Entities;
-using Mantaras.Juridico.Domain.Enums;
 
 namespace Mantaras.Juridico.Application.Common.Interfaces;
 
@@ -12,11 +11,16 @@ public interface ICasoRepository
         CancellationToken cancellationToken = default
     );
 
+    Task<IReadOnlyCollection<Caso>> ObtenerActivosPorIdsAsync(
+        IReadOnlyCollection<long> casoIds,
+        CancellationToken cancellationToken = default
+    );
+
     Task AgregarAsync(Caso caso, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyCollection<Caso>> BuscarAsync(
         string? busqueda,
-        FaseCaso? faseInterna,
+        string? faseInterna,
         bool soloActivos,
         int page,
         int pageSize,
@@ -25,7 +29,7 @@ public interface ICasoRepository
 
     Task<int> ContarAsync(
         string? busqueda,
-        FaseCaso? faseInterna,
+        string? faseInterna,
         bool soloActivos,
         CancellationToken cancellationToken = default
     );

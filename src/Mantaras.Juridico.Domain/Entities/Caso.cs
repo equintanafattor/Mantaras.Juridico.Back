@@ -1,5 +1,4 @@
 using Mantaras.Juridico.Domain.Common;
-using Mantaras.Juridico.Domain.Enums;
 
 namespace Mantaras.Juridico.Domain.Entities;
 
@@ -9,11 +8,13 @@ public class Caso : AuditableEntity
 
     public string Titulo { get; set; } = null!;
 
-    public FaseCaso FaseInterna { get; set; }
+    public string FaseInterna { get; set; } = string.Empty;
 
     public string? TipoTramite { get; set; }
 
     public string? NumeroExpedienteAnses { get; set; }
+
+    public string? NumeroBeneficio { get; set; }
 
     public long? TipoBeneficioId { get; set; }
 
@@ -30,5 +31,6 @@ public class Caso : AuditableEntity
 
     public ICollection<CasoCliente> Clientes { get; set; } = new List<CasoCliente>();
 
-    public ICollection<Expediente> Expedientes { get; set; } = new List<Expediente>();
+    public ICollection<CasoExpediente> Expedientes { get; set; } =
+        new List<CasoExpediente>();
 }

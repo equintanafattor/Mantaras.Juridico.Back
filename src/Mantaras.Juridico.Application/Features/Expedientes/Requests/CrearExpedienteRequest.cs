@@ -4,7 +4,7 @@ namespace Mantaras.Juridico.Application.Features.Expedientes.Requests;
 
 public sealed class CrearExpedienteRequest
 {
-    public long CasoId { get; set; }
+    public IReadOnlyCollection<long> CasoIds { get; set; } = Array.Empty<long>();
 
     public long? ExpedientePadreId { get; set; }
     

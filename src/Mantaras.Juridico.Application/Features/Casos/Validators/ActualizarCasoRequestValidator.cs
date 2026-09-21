@@ -14,8 +14,10 @@ public sealed class ActualizarCasoRequestValidator : AbstractValidator<Actualiza
             .WithMessage("El título no puede superar los 300 caracteres.");
 
         RuleFor(x => x.FaseInterna)
-            .IsInEnum()
-            .WithMessage("La fase interna informada no es válida.");
+            .NotEmpty()
+            .WithMessage("La fase interna es obligatoria.")
+            .MaximumLength(200)
+            .WithMessage("La fase interna no puede superar los 200 caracteres.");
 
         RuleFor(x => x.TipoTramite)
             .MaximumLength(200)
@@ -24,6 +26,10 @@ public sealed class ActualizarCasoRequestValidator : AbstractValidator<Actualiza
         RuleFor(x => x.NumeroExpedienteAnses)
             .MaximumLength(100)
             .WithMessage("El número de expediente ANSES no puede superar los 100 caracteres.");
+
+        RuleFor(x => x.NumeroBeneficio)
+            .MaximumLength(100)
+            .WithMessage("El número de beneficio no puede superar los 100 caracteres.");
 
         RuleFor(x => x.TipoBeneficioId)
             .GreaterThan(0L)

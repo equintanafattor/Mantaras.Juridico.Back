@@ -21,7 +21,7 @@ public static class ExpedienteErrors
 
     public static readonly Error PadreDeOtroCaso = new(
         "Expedientes.PadreDeOtroCaso",
-        "El expediente padre debe pertenecer al mismo caso."
+        "El expediente padre debe compartir al menos un expediente administrativo."
     );
 
     public static readonly Error PadreEsMismoExpediente = new(

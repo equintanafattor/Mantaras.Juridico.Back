@@ -161,6 +161,7 @@ public static class DependencyInjection
         services.AddScoped<IObservacionRepository, ObservacionRepository>();
 
         services.AddScoped<ITipoBeneficioRepository, TipoBeneficioRepository>();
+        services.AddScoped<IOpcionCatalogoRepository, OpcionCatalogoRepository>();
         services.AddScoped<ITipoExpedienteAdministrativoRepository, TipoExpedienteAdministrativoRepository>();
 
         services.AddScoped<IRelacionFamiliarRepository, RelacionFamiliarRepository>();

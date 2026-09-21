@@ -20,7 +20,10 @@ public sealed class ExpedienteRepository : IExpedienteRepository
     )
     {
         return _dbContext
-            .Expedientes.Include(x => x.Caso)
+            .Expedientes
+            .Include(x => x.Casos)
+                .ThenInclude(x => x.Caso)
+                    .ThenInclude(x => x.TipoBeneficio)
             .FirstOrDefaultAsync(
                 x => x.ExpedienteId == expedienteId,
                 cancellationToken
@@ -34,7 +37,9 @@ public sealed class ExpedienteRepository : IExpedienteRepository
     {
         return _dbContext
             .Expedientes.AsNoTracking()
-            .Include(x => x.Caso)
+            .Include(x => x.Casos)
+                .ThenInclude(x => x.Caso)
+                    .ThenInclude(x => x.TipoBeneficio)
             .Include(x => x.ExpedientePadre)
             .Include(x => x.ExpedientesDerivados)
             .FirstOrDefaultAsync(
@@ -70,7 +75,9 @@ public sealed class ExpedienteRepository : IExpedienteRepository
         );
 
         return await query
-            .Include(x => x.Caso)
+            .Include(x => x.Casos)
+                .ThenInclude(x => x.Caso)
+                    .ThenInclude(x => x.TipoBeneficio)
             .OrderByDescending(x => x.FechaCreacion)
             .ThenBy(x => x.Caratula)
             .Skip((page - 1) * pageSize)
@@ -107,15 +114,15 @@ public sealed class ExpedienteRepository : IExpedienteRepository
     }
 
     public Task<bool> ExistePrincipalAsync(
-        long casoId,
+        IReadOnlyCollection<long> casoIds,
         long? expedienteIdExcluir = null,
         CancellationToken cancellationToken = default
     )
     {
         return _dbContext.Expedientes.AnyAsync(
             x =>
-                x.CasoId == casoId
-                && x.TipoExpediente == TipoExpediente.Principal
+                x.TipoExpediente == TipoExpediente.Principal
+                && x.Casos.Any(relacion => casoIds.Contains(relacion.CasoId))
                 && (
                     !expedienteIdExcluir.HasValue
                     || x.ExpedienteId != expedienteIdExcluir.Value
@@ -146,7 +153,9 @@ public sealed class ExpedienteRepository : IExpedienteRepository
 
         if (casoId.HasValue)
         {
-            query = query.Where(x => x.CasoId == casoId.Value);
+            query = query.Where(x =>
+                x.Casos.Any(relacion => relacion.CasoId == casoId.Value)
+            );
         }
 
         if (!string.IsNullOrWhiteSpace(busqueda))
@@ -185,31 +194,41 @@ public sealed class ExpedienteRepository : IExpedienteRepository
                             $"%{termino}%"
                         )
                 )
-                || EF.Functions.ILike(
-                    x.Caso.Titulo,
-                    $"%{termino}%"
-                )
-                || x.Caso.Clientes.Any(relacion =>
+                || x.Casos.Any(casoExpediente =>
                     EF.Functions.ILike(
-                        relacion.Cliente.Nombre,
+                        casoExpediente.Caso.Titulo,
                         $"%{termino}%"
                     )
-                    || EF.Functions.ILike(
-                        relacion.Cliente.Apellido,
-                        $"%{termino}%"
-                    )
-                    || (
-                        relacion.Cliente.Dni != null
-                        && EF.Functions.ILike(
-                            relacion.Cliente.Dni,
+                    || casoExpediente.Caso.Clientes.Any(relacion =>
+                        EF.Functions.ILike(
+                            relacion.Cliente.Nombre,
                             $"%{termino}%"
                         )
-                    )
-                    || (
-                        relacion.Cliente.Cuil != null
-                        && EF.Functions.ILike(
-                            relacion.Cliente.Cuil,
+                        || EF.Functions.ILike(
+                            relacion.Cliente.Apellido,
                             $"%{termino}%"
+                        )
+                        || EF.Functions.ILike(
+                            relacion.Cliente.Apellido + ", " + relacion.Cliente.Nombre,
+                            $"%{termino}%"
+                        )
+                        || EF.Functions.ILike(
+                            relacion.Cliente.Nombre + " " + relacion.Cliente.Apellido,
+                            $"%{termino}%"
+                        )
+                        || (
+                            relacion.Cliente.Dni != null
+                            && EF.Functions.ILike(
+                                relacion.Cliente.Dni,
+                                $"%{termino}%"
+                            )
+                        )
+                        || (
+                            relacion.Cliente.Cuil != null
+                            && EF.Functions.ILike(
+                                relacion.Cliente.Cuil,
+                                $"%{termino}%"
+                            )
                         )
                     )
                 )

@@ -66,8 +66,9 @@ public sealed class PanelRepository : IPanelRepository
     {
         return await _dbContext
             .Expedientes.AsNoTracking()
-            .Include(x => x.Caso)
-            .Where(x => x.Activo && x.Caso.Activo)
+            .Include(x => x.Casos)
+                .ThenInclude(x => x.Caso)
+            .Where(x => x.Activo && x.Casos.Any(relacion => relacion.Caso.Activo))
             .OrderByDescending(
                 x => x.FechaModificacion ?? x.FechaCreacion
             )

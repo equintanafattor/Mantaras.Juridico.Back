@@ -138,13 +138,18 @@ public sealed class CasosService : ICasosService
             EstadoLegal = NormalizarOpcional(
                 request.Expediente.EstadoLegal
             ),
-            Caso = caso,
             FechaCreacion = fechaCreacion,
             UsuarioCreacion = _currentUser.Usuario,
             Activo = true,
         };
 
-        caso.Expedientes.Add(expediente);
+        caso.Expedientes.Add(
+            new CasoExpediente
+            {
+                Caso = caso,
+                Expediente = expediente,
+            }
+        );
 
         await _casoRepository.AgregarAsync(
             caso,
@@ -162,6 +167,7 @@ public sealed class CasosService : ICasosService
                 ExpedienteId = expediente.ExpedienteId,
                 TituloCaso = caso.Titulo,
                 NumeroExpedienteAnses = caso.NumeroExpedienteAnses,
+                NumeroBeneficio = caso.NumeroBeneficio,
                 TipoBeneficioId = caso.TipoBeneficioId,
                 TipoBeneficioNombre = caso.TipoBeneficio?.Nombre,
                 TipoBeneficioActivo = caso.TipoBeneficio?.Activo,
@@ -271,12 +277,17 @@ public sealed class CasosService : ICasosService
         }
 
         caso.Titulo = request.Titulo.Trim();
-        caso.FaseInterna = request.FaseInterna;
+        caso.FaseInterna = request.FaseInterna.Trim();
         caso.TipoTramite = NormalizarOpcional(request.TipoTramite);
 
         if (request.NumeroExpedienteAnsesInformado)
         {
             caso.NumeroExpedienteAnses = NormalizarOpcional(request.NumeroExpedienteAnses);
+        }
+
+        if (request.NumeroBeneficioInformado)
+        {
+            caso.NumeroBeneficio = NormalizarOpcional(request.NumeroBeneficio);
         }
 
         caso.TipoBeneficioId = tipoBeneficioId;
@@ -410,9 +421,10 @@ public sealed class CasosService : ICasosService
         var caso = new Caso
         {
             Titulo = request.Titulo.Trim(),
-            FaseInterna = request.FaseInterna,
+            FaseInterna = request.FaseInterna.Trim(),
             TipoTramite = NormalizarOpcional(request.TipoTramite),
             NumeroExpedienteAnses = NormalizarOpcional(request.NumeroExpedienteAnses),
+            NumeroBeneficio = NormalizarOpcional(request.NumeroBeneficio),
             TipoBeneficioId = request.TipoBeneficioId,
             TipoBeneficio = tipoBeneficio,
             TipoExpedienteAdministrativoId = request.TipoExpedienteAdministrativoId,
@@ -451,6 +463,7 @@ public sealed class CasosService : ICasosService
             FaseInterna = caso.FaseInterna,
             TipoTramite = caso.TipoTramite,
             NumeroExpedienteAnses = caso.NumeroExpedienteAnses,
+            NumeroBeneficio = caso.NumeroBeneficio,
             TipoBeneficioId = caso.TipoBeneficioId,
             TipoBeneficioNombre = caso.TipoBeneficio?.Nombre,
             TipoBeneficioActivo = caso.TipoBeneficio?.Activo,
@@ -474,7 +487,8 @@ public sealed class CasosService : ICasosService
                 })
                 .ToArray(),
             Expedientes = caso
-                .Expedientes.OrderBy(x => x.ExpedientePadreId.HasValue)
+                .Expedientes.Select(x => x.Expediente)
+                .OrderBy(x => x.ExpedientePadreId.HasValue)
                 .ThenBy(x => x.FechaInicio)
                 .ThenBy(x => x.Caratula)
                 .Select(x => new ExpedienteCasoDetalleResponse
@@ -505,6 +519,7 @@ public sealed class CasosService : ICasosService
             FaseInterna = caso.FaseInterna,
             TipoTramite = caso.TipoTramite,
             NumeroExpedienteAnses = caso.NumeroExpedienteAnses,
+            NumeroBeneficio = caso.NumeroBeneficio,
             TipoBeneficioId = caso.TipoBeneficioId,
             TipoBeneficioNombre = caso.TipoBeneficio?.Nombre,
             TipoBeneficioActivo = caso.TipoBeneficio?.Activo,

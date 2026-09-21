@@ -25,28 +25,12 @@ public class ExpedienteConfiguration : IEntityTypeConfiguration<Expediente>
 
         builder.HasIndex(x => x.NumeroExpediente);
 
-        builder.HasIndex(x => x.CasoId);
-
         builder.HasIndex(x => x.ExpedientePadreId);
-
-        builder
-            .HasIndex(
-                x => x.CasoId,
-                "IX_Expedientes_CasoId_Principal"
-            )
-            .IsUnique()
-            .HasFilter("\"TipoExpediente\" = 1");
 
         builder
             .Property(x => x.TipoExpediente)
             .HasConversion<int>()
             .HasDefaultValue(TipoExpediente.Principal);
-
-        builder
-            .HasOne(x => x.Caso)
-            .WithMany(x => x.Expedientes)
-            .HasForeignKey(x => x.CasoId)
-            .OnDelete(DeleteBehavior.Restrict);
 
         builder
             .HasOne(x => x.ExpedientePadre)

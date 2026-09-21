@@ -30,87 +30,82 @@ public sealed class ExpedientesService : IExpedientesService
         CancellationToken cancellationToken = default
     )
     {
-        var caso = await _casoRepository.ObtenerPorIdAsync(
-            request.CasoId,
+        var casoIds = request.CasoIds.Distinct().ToArray();
+        var casos = await _casoRepository.ObtenerActivosPorIdsAsync(
+            casoIds,
             cancellationToken
         );
 
-        if (caso is null || !caso.Activo)
+        if (casos.Count != casoIds.Length)
         {
             return Result<ExpedienteResponse>.Failure(
                 ExpedienteErrors.CasoNoEncontradoOInactivo
             );
         }
 
-        if (request.TipoExpediente == TipoExpediente.Principal)
+        if (
+            request.TipoExpediente == TipoExpediente.Principal
+            && await _expedienteRepository.ExistePrincipalAsync(
+                casoIds,
+                cancellationToken: cancellationToken
+            )
+        )
         {
-            var existePrincipal =
-                await _expedienteRepository.ExistePrincipalAsync(
-                    request.CasoId,
-                    cancellationToken: cancellationToken
-                );
-
-            if (existePrincipal)
-            {
-                return Result<ExpedienteResponse>.Failure(
-                    ExpedienteErrors.PrincipalDuplicado
-                );
-            }
+            return Result<ExpedienteResponse>.Failure(
+                ExpedienteErrors.PrincipalDuplicado
+            );
         }
 
-        Expediente? expedientePadre = null;
+        var padreResult = await ResolverPadreAsync(
+            request.ExpedientePadreId,
+            null,
+            cancellationToken
+        );
 
-        if (request.ExpedientePadreId.HasValue)
+        if (padreResult.Error is { } error)
         {
-            expedientePadre = await _expedienteRepository.ObtenerPorIdAsync(
-                request.ExpedientePadreId.Value,
-                cancellationToken
-            );
+            return Result<ExpedienteResponse>.Failure(error);
+        }
 
-            if (expedientePadre is null || !expedientePadre.Activo)
-            {
-                return Result<ExpedienteResponse>.Failure(
-                    ExpedienteErrors.PadreNoEncontradoOInactivo
-                );
-            }
-
-            if (expedientePadre.CasoId != request.CasoId)
-            {
-                return Result<ExpedienteResponse>.Failure(
-                    ExpedienteErrors.PadreDeOtroCaso
-                );
-            }
+        if (
+            padreResult.Padre is not null
+            && !padreResult.Padre.Casos.Any(x => casoIds.Contains(x.CasoId))
+        )
+        {
+            return Result<ExpedienteResponse>.Failure(ExpedienteErrors.PadreDeOtroCaso);
         }
 
         var expediente = new Expediente
         {
-            CasoId = caso.CasoId,
-            ExpedientePadreId = expedientePadre?.ExpedienteId,
+            ExpedientePadreId = padreResult.Padre?.ExpedienteId,
             TipoExpediente = request.TipoExpediente,
             NumeroExpediente = NormalizarOpcional(request.NumeroExpediente),
             Caratula = request.Caratula.Trim(),
             Juzgado = NormalizarOpcional(request.Juzgado),
             FechaInicio = request.FechaInicio,
             EstadoLegal = NormalizarOpcional(request.EstadoLegal),
-            Caso = caso,
-            ExpedientePadre = expedientePadre,
+            ExpedientePadre = padreResult.Padre,
             FechaCreacion = DateTime.UtcNow,
             UsuarioCreacion = _currentUser.Usuario,
             Activo = true,
         };
 
-        await _expedienteRepository.AgregarAsync(
-            expediente,
-            cancellationToken
-        );
+        foreach (var caso in casos)
+        {
+            expediente.Casos.Add(
+                new CasoExpediente
+                {
+                    CasoId = caso.CasoId,
+                    Caso = caso,
+                    Expediente = expediente,
+                }
+            );
+        }
 
-        await _expedienteRepository.GuardarCambiosAsync(
-            cancellationToken
-        );
+        await _expedienteRepository.AgregarAsync(expediente, cancellationToken);
+        await _expedienteRepository.GuardarCambiosAsync(cancellationToken);
 
-        return Result<ExpedienteResponse>.Success(
-            MapearResponse(expediente)
-        );
+        return Result<ExpedienteResponse>.Success(MapearResponse(expediente));
     }
 
     public async Task<Result<ExpedienteDetalleResponse>> ObtenerPorIdAsync(
@@ -123,16 +118,9 @@ public sealed class ExpedientesService : IExpedientesService
             cancellationToken
         );
 
-        if (expediente is null)
-        {
-            return Result<ExpedienteDetalleResponse>.Failure(
-                ExpedienteErrors.NoEncontrado
-            );
-        }
-
-        return Result<ExpedienteDetalleResponse>.Success(
-            MapearDetalleResponse(expediente)
-        );
+        return expediente is null
+            ? Result<ExpedienteDetalleResponse>.Failure(ExpedienteErrors.NoEncontrado)
+            : Result<ExpedienteDetalleResponse>.Success(MapearDetalleResponse(expediente));
     }
 
     public async Task<PagedResponse<ExpedienteResponse>> BuscarAsync(
@@ -178,26 +166,34 @@ public sealed class ExpedientesService : IExpedientesService
 
         if (expediente is null)
         {
+            return Result<ExpedienteResponse>.Failure(ExpedienteErrors.NoEncontrado);
+        }
+
+        var casoIds = request.CasoIds.Distinct().ToArray();
+        var casos = await _casoRepository.ObtenerActivosPorIdsAsync(
+            casoIds,
+            cancellationToken
+        );
+
+        if (casos.Count != casoIds.Length)
+        {
             return Result<ExpedienteResponse>.Failure(
-                ExpedienteErrors.NoEncontrado
+                ExpedienteErrors.CasoNoEncontradoOInactivo
             );
         }
 
-        if (request.TipoExpediente == TipoExpediente.Principal)
+        if (
+            request.TipoExpediente == TipoExpediente.Principal
+            && await _expedienteRepository.ExistePrincipalAsync(
+                casoIds,
+                expedienteId,
+                cancellationToken
+            )
+        )
         {
-            var existeOtroPrincipal =
-                await _expedienteRepository.ExistePrincipalAsync(
-                    expediente.CasoId,
-                    expedienteId,
-                    cancellationToken
-                );
-
-            if (existeOtroPrincipal)
-            {
-                return Result<ExpedienteResponse>.Failure(
-                    ExpedienteErrors.PrincipalDuplicado
-                );
-            }
+            return Result<ExpedienteResponse>.Failure(
+                ExpedienteErrors.PrincipalDuplicado
+            );
         }
 
         if (request.ExpedientePadreId == expedienteId)
@@ -207,49 +203,29 @@ public sealed class ExpedientesService : IExpedientesService
             );
         }
 
-        Expediente? expedientePadre = null;
+        var padreResult = await ResolverPadreAsync(
+            request.ExpedientePadreId,
+            expedienteId,
+            cancellationToken
+        );
 
-        if (request.ExpedientePadreId.HasValue)
+        if (padreResult.Error is { } error)
         {
-            expedientePadre = await _expedienteRepository.ObtenerPorIdAsync(
-                request.ExpedientePadreId.Value,
-                cancellationToken
-            );
-
-            if (expedientePadre is null || !expedientePadre.Activo)
-            {
-                return Result<ExpedienteResponse>.Failure(
-                    ExpedienteErrors.PadreNoEncontradoOInactivo
-                );
-            }
-
-            if (expedientePadre.CasoId != expediente.CasoId)
-            {
-                return Result<ExpedienteResponse>.Failure(
-                    ExpedienteErrors.PadreDeOtroCaso
-                );
-            }
-
-            var produceCiclo = await ProduceCicloAsync(
-                expedienteId,
-                expedientePadre,
-                cancellationToken
-            );
-
-            if (produceCiclo)
-            {
-                return Result<ExpedienteResponse>.Failure(
-                    ExpedienteErrors.JerarquiaCiclica
-                );
-            }
+            return Result<ExpedienteResponse>.Failure(error);
         }
 
-        expediente.ExpedientePadreId = expedientePadre?.ExpedienteId;
-        expediente.ExpedientePadre = expedientePadre;
+        if (
+            padreResult.Padre is not null
+            && !padreResult.Padre.Casos.Any(x => casoIds.Contains(x.CasoId))
+        )
+        {
+            return Result<ExpedienteResponse>.Failure(ExpedienteErrors.PadreDeOtroCaso);
+        }
+
+        expediente.ExpedientePadreId = padreResult.Padre?.ExpedienteId;
+        expediente.ExpedientePadre = padreResult.Padre;
         expediente.TipoExpediente = request.TipoExpediente;
-        expediente.NumeroExpediente = NormalizarOpcional(
-            request.NumeroExpediente
-        );
+        expediente.NumeroExpediente = NormalizarOpcional(request.NumeroExpediente);
         expediente.Caratula = request.Caratula.Trim();
         expediente.Juzgado = NormalizarOpcional(request.Juzgado);
         expediente.FechaInicio = request.FechaInicio;
@@ -257,13 +233,39 @@ public sealed class ExpedientesService : IExpedientesService
         expediente.FechaModificacion = DateTime.UtcNow;
         expediente.UsuarioModificacion = _currentUser.Usuario;
 
-        await _expedienteRepository.GuardarCambiosAsync(
-            cancellationToken
-        );
+        var solicitados = casos.ToDictionary(x => x.CasoId);
+        var eliminados = expediente.Casos
+            .Where(x => !solicitados.ContainsKey(x.CasoId))
+            .ToArray();
 
-        return Result<ExpedienteResponse>.Success(
-            MapearResponse(expediente)
-        );
+        foreach (var relacion in eliminados)
+        {
+            expediente.Casos.Remove(relacion);
+        }
+
+        var existentes = expediente.Casos.Select(x => x.CasoId).ToHashSet();
+
+        foreach (var caso in casos.Where(x => !existentes.Contains(x.CasoId)))
+        {
+            expediente.Casos.Add(
+                new CasoExpediente
+                {
+                    CasoId = caso.CasoId,
+                    ExpedienteId = expediente.ExpedienteId,
+                    Caso = caso,
+                    Expediente = expediente,
+                }
+            );
+        }
+
+        foreach (var relacion in expediente.Casos)
+        {
+            relacion.Caso = solicitados[relacion.CasoId];
+        }
+
+        await _expedienteRepository.GuardarCambiosAsync(cancellationToken);
+
+        return Result<ExpedienteResponse>.Success(MapearResponse(expediente));
     }
 
     public async Task<Result<bool>> DarDeBajaAsync(
@@ -278,9 +280,7 @@ public sealed class ExpedientesService : IExpedientesService
 
         if (expediente is null)
         {
-            return Result<bool>.Failure(
-                ExpedienteErrors.NoEncontrado
-            );
+            return Result<bool>.Failure(ExpedienteErrors.NoEncontrado);
         }
 
         if (!expediente.Activo)
@@ -288,26 +288,21 @@ public sealed class ExpedientesService : IExpedientesService
             return Result<bool>.Success(true);
         }
 
-        var tieneDerivadosActivos =
-        await _expedienteRepository.TieneDerivadosActivosAsync(
-            expedienteId,
-            cancellationToken
-        );
-
-        if (tieneDerivadosActivos)
+        if (
+            await _expedienteRepository.TieneDerivadosActivosAsync(
+                expedienteId,
+                cancellationToken
+            )
+        )
         {
-            return Result<bool>.Failure(
-                ExpedienteErrors.DerivadosActivos
-            );
+            return Result<bool>.Failure(ExpedienteErrors.DerivadosActivos);
         }
 
         expediente.Activo = false;
         expediente.FechaModificacion = DateTime.UtcNow;
         expediente.UsuarioModificacion = _currentUser.Usuario;
 
-        await _expedienteRepository.GuardarCambiosAsync(
-            cancellationToken
-        );
+        await _expedienteRepository.GuardarCambiosAsync(cancellationToken);
 
         return Result<bool>.Success(true);
     }
@@ -324,9 +319,7 @@ public sealed class ExpedientesService : IExpedientesService
 
         if (expediente is null)
         {
-            return Result<bool>.Failure(
-                ExpedienteErrors.NoEncontrado
-            );
+            return Result<bool>.Failure(ExpedienteErrors.NoEncontrado);
         }
 
         if (expediente.Activo)
@@ -334,7 +327,7 @@ public sealed class ExpedientesService : IExpedientesService
             return Result<bool>.Success(true);
         }
 
-        if (!expediente.Caso.Activo)
+        if (expediente.Casos.Count == 0 || expediente.Casos.Any(x => !x.Caso.Activo))
         {
             return Result<bool>.Failure(
                 ExpedienteErrors.CasoNoEncontradoOInactivo
@@ -343,36 +336,65 @@ public sealed class ExpedientesService : IExpedientesService
 
         if (expediente.ExpedientePadreId.HasValue)
         {
-            var expedientePadre =
-                await _expedienteRepository.ObtenerPorIdAsync(
-                    expediente.ExpedientePadreId.Value,
-                    cancellationToken
-                );
+            var padre = await _expedienteRepository.ObtenerPorIdAsync(
+                expediente.ExpedientePadreId.Value,
+                cancellationToken
+            );
 
-            if (expedientePadre is null || !expedientePadre.Activo)
+            if (padre is null || !padre.Activo)
             {
                 return Result<bool>.Failure(
                     ExpedienteErrors.PadreNoEncontradoOInactivo
                 );
             }
 
-            if (expedientePadre.CasoId != expediente.CasoId)
+            var casoIds = expediente.Casos.Select(x => x.CasoId).ToHashSet();
+            if (!padre.Casos.Any(x => casoIds.Contains(x.CasoId)))
             {
-                return Result<bool>.Failure(
-                    ExpedienteErrors.PadreDeOtroCaso
-                );
+                return Result<bool>.Failure(ExpedienteErrors.PadreDeOtroCaso);
             }
+
         }
 
         expediente.Activo = true;
         expediente.FechaModificacion = DateTime.UtcNow;
         expediente.UsuarioModificacion = _currentUser.Usuario;
 
-        await _expedienteRepository.GuardarCambiosAsync(
+        await _expedienteRepository.GuardarCambiosAsync(cancellationToken);
+
+        return Result<bool>.Success(true);
+    }
+
+    private async Task<(Expediente? Padre, Error? Error)> ResolverPadreAsync(
+        long? expedientePadreId,
+        long? expedienteId,
+        CancellationToken cancellationToken
+    )
+    {
+        if (!expedientePadreId.HasValue)
+        {
+            return (null, null);
+        }
+
+        var padre = await _expedienteRepository.ObtenerPorIdAsync(
+            expedientePadreId.Value,
             cancellationToken
         );
 
-        return Result<bool>.Success(true);
+        if (padre is null || !padre.Activo)
+        {
+            return (null, ExpedienteErrors.PadreNoEncontradoOInactivo);
+        }
+
+        if (
+            expedienteId.HasValue
+            && await ProduceCicloAsync(expedienteId.Value, padre, cancellationToken)
+        )
+        {
+            return (null, ExpedienteErrors.JerarquiaCiclica);
+        }
+
+        return (padre, null);
     }
 
     private async Task<bool> ProduceCicloAsync(
@@ -386,12 +408,10 @@ public sealed class ExpedientesService : IExpedientesService
 
         while (expedienteActual is not null)
         {
-            if (expedienteActual.ExpedienteId == expedienteId)
-            {
-                return true;
-            }
-
-            if (!visitados.Add(expedienteActual.ExpedienteId))
+            if (
+                expedienteActual.ExpedienteId == expedienteId
+                || !visitados.Add(expedienteActual.ExpedienteId)
+            )
             {
                 return true;
             }
@@ -401,25 +421,21 @@ public sealed class ExpedientesService : IExpedientesService
                 return false;
             }
 
-            expedienteActual =
-                await _expedienteRepository.ObtenerPorIdAsync(
-                    expedienteActual.ExpedientePadreId.Value,
-                    cancellationToken
-                );
+            expedienteActual = await _expedienteRepository.ObtenerPorIdAsync(
+                expedienteActual.ExpedientePadreId.Value,
+                cancellationToken
+            );
         }
 
         return false;
     }
 
-    private static ExpedienteDetalleResponse MapearDetalleResponse(
-        Expediente expediente
-    )
+    private static ExpedienteDetalleResponse MapearDetalleResponse(Expediente expediente)
     {
         return new ExpedienteDetalleResponse
         {
             ExpedienteId = expediente.ExpedienteId,
-            CasoId = expediente.CasoId,
-            TituloCaso = expediente.Caso.Titulo,
+            Casos = MapearCasos(expediente),
             ExpedientePadreId = expediente.ExpedientePadreId,
             TipoExpediente = expediente.TipoExpediente,
             NumeroExpediente = expediente.NumeroExpediente,
@@ -430,8 +446,7 @@ public sealed class ExpedientesService : IExpedientesService
             ExpedientePadre = expediente.ExpedientePadre is null
                 ? null
                 : MapearRelacionado(expediente.ExpedientePadre),
-            ExpedientesDerivados = expediente
-                .ExpedientesDerivados
+            ExpedientesDerivados = expediente.ExpedientesDerivados
                 .OrderBy(x => x.FechaInicio)
                 .ThenBy(x => x.Caratula)
                 .Select(MapearRelacionado)
@@ -442,15 +457,12 @@ public sealed class ExpedientesService : IExpedientesService
         };
     }
 
-    private static ExpedienteResponse MapearResponse(
-        Expediente expediente
-    )
+    private static ExpedienteResponse MapearResponse(Expediente expediente)
     {
         return new ExpedienteResponse
         {
             ExpedienteId = expediente.ExpedienteId,
-            CasoId = expediente.CasoId,
-            TituloCaso = expediente.Caso.Titulo,
+            Casos = MapearCasos(expediente),
             ExpedientePadreId = expediente.ExpedientePadreId,
             TipoExpediente = expediente.TipoExpediente,
             NumeroExpediente = expediente.NumeroExpediente,
@@ -462,6 +474,27 @@ public sealed class ExpedientesService : IExpedientesService
             FechaModificacion = expediente.FechaModificacion,
             Activo = expediente.Activo,
         };
+    }
+
+    private static IReadOnlyCollection<CasoExpedienteResponse> MapearCasos(
+        Expediente expediente
+    )
+    {
+        return expediente.Casos
+            .OrderBy(x => x.Caso.Titulo)
+            .ThenBy(x => x.CasoId)
+            .Select(x => new CasoExpedienteResponse
+            {
+                CasoId = x.CasoId,
+                Titulo = x.Caso.Titulo,
+                NumeroExpedienteAnses = x.Caso.NumeroExpedienteAnses,
+                NumeroBeneficio = x.Caso.NumeroBeneficio,
+                TipoBeneficioId = x.Caso.TipoBeneficioId,
+                TipoBeneficioNombre = x.Caso.TipoBeneficio?.Nombre,
+                TipoBeneficioActivo = x.Caso.TipoBeneficio?.Activo,
+                Activo = x.Caso.Activo,
+            })
+            .ToArray();
     }
 
     private static ExpedienteRelacionadoResponse MapearRelacionado(
@@ -480,8 +513,6 @@ public sealed class ExpedientesService : IExpedientesService
 
     private static string? NormalizarOpcional(string? valor)
     {
-        return string.IsNullOrWhiteSpace(valor)
-            ? null
-            : valor.Trim();
+        return string.IsNullOrWhiteSpace(valor) ? null : valor.Trim();
     }
 }

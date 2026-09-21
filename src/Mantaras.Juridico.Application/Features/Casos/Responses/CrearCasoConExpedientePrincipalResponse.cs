@@ -10,6 +10,8 @@ public sealed class CrearCasoConExpedientePrincipalResponse
 
     public string? NumeroExpedienteAnses { get; init; }
 
+    public string? NumeroBeneficio { get; init; }
+
     public long? TipoBeneficioId { get; init; }
 
     public string? TipoBeneficioNombre { get; init; }

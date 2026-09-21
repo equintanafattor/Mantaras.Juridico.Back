@@ -6,9 +6,8 @@ public sealed class ExpedienteResponse
 {
     public long ExpedienteId { get; set; }
 
-    public long CasoId { get; set; }
-
-    public string TituloCaso { get; set; } = string.Empty;
+    public IReadOnlyCollection<CasoExpedienteResponse> Casos { get; set; } =
+        Array.Empty<CasoExpedienteResponse>();
 
     public long? ExpedientePadreId { get; set; }
 

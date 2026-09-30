@@ -36,6 +36,45 @@ public class JuridicoDbContext : IdentityDbContext<UsuarioIdentity, IdentityRole
     public DbSet<HojaResumenCaso> HojasResumenCasos =>
         Set<HojaResumenCaso>();
 
+    public DbSet<TipoEntradaAgenda> TiposEntradaAgenda =>
+        Set<TipoEntradaAgenda>();
+
+    public DbSet<EntradaAgenda> EntradasAgenda => Set<EntradaAgenda>();
+
+    public DbSet<EntradaAgendaCliente> EntradasAgendaClientes =>
+        Set<EntradaAgendaCliente>();
+
+    public DbSet<EntradaAgendaCaso> EntradasAgendaCasos =>
+        Set<EntradaAgendaCaso>();
+
+    public DbSet<EntradaAgendaExpediente> EntradasAgendaExpedientes =>
+        Set<EntradaAgendaExpediente>();
+
+    public DbSet<EntradaAgendaResponsable> EntradasAgendaResponsables =>
+        Set<EntradaAgendaResponsable>();
+
+    public DbSet<RecordatorioAgenda> RecordatoriosAgenda =>
+        Set<RecordatorioAgenda>();
+
+    public DbSet<RecordatorioPredeterminadoTipoAgenda>
+        RecordatoriosPredeterminadosTiposAgenda =>
+            Set<RecordatorioPredeterminadoTipoAgenda>();
+
+    public DbSet<RecurrenciaAgenda> RecurrenciasAgenda =>
+        Set<RecurrenciaAgenda>();
+
+    public DbSet<ReglaVencimiento> ReglasVencimiento =>
+        Set<ReglaVencimiento>();
+
+    public DbSet<RecordatorioPredeterminadoReglaVencimiento>
+        RecordatoriosPredeterminadosReglasVencimiento =>
+            Set<RecordatorioPredeterminadoReglaVencimiento>();
+
+    public DbSet<AgendaGeneracionRegla> AgendaGeneracionesReglas =>
+        Set<AgendaGeneracionRegla>();
+
+    public DbSet<DiaInhabil> DiasInhabiles => Set<DiaInhabil>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

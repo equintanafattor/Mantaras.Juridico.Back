@@ -152,6 +152,11 @@ public static class DependencyInjection
 
         services.AddScoped<IAutenticacionService, AutenticacionService>();
         services.AddHttpContextAccessor();
+        services.AddScoped<IAgendaRepository, AgendaRepository>();
+        services.AddScoped<
+            IRecordatoriosAgendaRepository,
+            RecordatoriosAgendaRepository
+        >();
         services.AddScoped<IClienteRepository, ClienteRepository>();
         services.AddScoped<ICasoRepository, CasoRepository>();
         services.AddScoped<IExpedienteRepository, ExpedienteRepository>();

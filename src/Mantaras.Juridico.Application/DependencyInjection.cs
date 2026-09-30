@@ -1,4 +1,5 @@
 using FluentValidation;
+using Mantaras.Juridico.Application.Features.Agenda.Services;
 using Mantaras.Juridico.Application.Features.Casos.Services;
 using Mantaras.Juridico.Application.Features.Clientes.Services;
 using Mantaras.Juridico.Application.Features.Expedientes.Services;
@@ -18,6 +19,16 @@ public static class DependencyInjection
     {
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
 
+        services.AddScoped<IAgendaService, AgendaService>();
+        services.AddScoped<IReglasVencimientoService, ReglasVencimientoService>();
+        services.AddScoped<
+            IRecordatoriosAgendaService,
+            RecordatoriosAgendaService
+        >();
+        services.AddScoped<
+            IRecordatoriosPredeterminadosService,
+            RecordatoriosPredeterminadosService
+        >();
         services.AddScoped<IClientesService, ClientesService>();
         services.AddScoped<ICasosService, CasosService>();
         services.AddScoped<IHojaResumenCasoService, HojaResumenCasoService>();

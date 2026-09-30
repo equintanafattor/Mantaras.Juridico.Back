@@ -7,6 +7,7 @@ namespace Mantaras.Juridico.Application.Features.Panel.Services;
 public sealed class PanelService : IPanelService
 {
     private const int CantidadActividadReciente = 8;
+    private const int CantidadAgendaProxima = 8;
 
     private readonly IPanelRepository _panelRepository;
 
@@ -47,6 +48,20 @@ public sealed class PanelService : IPanelService
                 cancellationToken
             );
 
+        var zonaHoraria = TimeZoneInfo.FindSystemTimeZoneById(
+            EntradaAgenda.ZonaHorariaPredeterminada
+        );
+        var fechaLocal = TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.UtcNow,
+            zonaHoraria
+        );
+        var hoy = DateOnly.FromDateTime(fechaLocal);
+        var agenda = await _panelRepository.ObtenerResumenAgendaAsync(
+            hoy,
+            CantidadAgendaProxima,
+            cancellationToken
+        );
+
         var actividadReciente = casosRecientes
             .Select(MapearCaso)
             .Concat(expedientesRecientes.Select(MapearExpediente))
@@ -68,6 +83,72 @@ public sealed class PanelService : IPanelService
                 Disponible = false,
                 TotalPendientes = 0,
             },
+            Agenda = new PanelAgendaResponse
+            {
+                Hoy = agenda.Hoy,
+                Proximos = agenda.Proximos,
+                Vencidos = agenda.Vencidos,
+                ElementosProximos = agenda.ElementosProximos
+                    .Select(x => MapearAgenda(x, hoy))
+                    .ToArray(),
+            },
+        };
+    }
+
+    private static PanelAgendaItemResponse MapearAgenda(
+        PanelAgendaItemData entrada,
+        DateOnly hoy
+    )
+    {
+        var contextos = entrada.Clientes
+            .Select(x => MapearContexto("Cliente", x, $"/clientes/{x.Id}"))
+            .Concat(
+                entrada.Casos.Select(x =>
+                    MapearContexto(
+                        "ExpedienteAdministrativo",
+                        x,
+                        $"/casos/{x.Id}"
+                    )
+                )
+            )
+            .Concat(
+                entrada.Expedientes.Select(x =>
+                    MapearContexto(
+                        "ExpedienteJudicial",
+                        x,
+                        $"/expedientes/{x.Id}"
+                    )
+                )
+            )
+            .ToArray();
+
+        return new PanelAgendaItemResponse
+        {
+            EntradaAgendaId = entrada.EntradaAgendaId,
+            Titulo = entrada.Titulo,
+            TipoEntradaNombre = entrada.TipoEntradaNombre,
+            TipoEntradaColor = entrada.TipoEntradaColor,
+            Estado = entrada.Estado,
+            Prioridad = entrada.Prioridad,
+            FechaReferencia = entrada.FechaReferencia,
+            HoraReferencia = entrada.HoraReferencia,
+            EsDeHoy = entrada.FechaReferencia == hoy,
+            Contextos = contextos,
+        };
+    }
+
+    private static PanelAgendaContextoResponse MapearContexto(
+        string tipo,
+        PanelAgendaContextoData contexto,
+        string url
+    )
+    {
+        return new PanelAgendaContextoResponse
+        {
+            Tipo = tipo,
+            Id = contexto.Id,
+            Nombre = contexto.Nombre,
+            Url = url,
         };
     }
 

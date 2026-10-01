@@ -46,6 +46,7 @@ public interface IAgendaRepository
         long? casoId,
         long? expedienteId,
         string? busqueda,
+        bool incluirVencimientos,
         bool soloActivos,
         int page,
         int pageSize,
@@ -62,6 +63,7 @@ public interface IAgendaRepository
         long? casoId,
         long? expedienteId,
         string? busqueda,
+        bool incluirVencimientos,
         bool soloActivos,
         CancellationToken cancellationToken = default
     );

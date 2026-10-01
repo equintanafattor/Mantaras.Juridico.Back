@@ -23,5 +23,7 @@ public sealed class BuscarAgendaRequest : PagedRequest
 
     public string? Busqueda { get; set; }
 
+    public bool IncluirVencimientos { get; set; }
+
     public bool SoloActivos { get; set; } = true;
 }

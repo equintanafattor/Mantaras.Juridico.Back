@@ -111,6 +111,7 @@ public sealed class AgendaRepository : IAgendaRepository
         long? casoId,
         long? expedienteId,
         string? busqueda,
+        bool incluirVencimientos,
         bool soloActivos,
         int page,
         int pageSize,
@@ -127,6 +128,7 @@ public sealed class AgendaRepository : IAgendaRepository
                 casoId,
                 expedienteId,
                 busqueda,
+                incluirVencimientos,
                 soloActivos
             )
             .Include(x => x.TipoEntrada)
@@ -157,6 +159,7 @@ public sealed class AgendaRepository : IAgendaRepository
         long? casoId,
         long? expedienteId,
         string? busqueda,
+        bool incluirVencimientos,
         bool soloActivos,
         CancellationToken cancellationToken = default
     )
@@ -171,6 +174,7 @@ public sealed class AgendaRepository : IAgendaRepository
             casoId,
             expedienteId,
             busqueda,
+            incluirVencimientos,
             soloActivos
         ).CountAsync(cancellationToken);
     }
@@ -371,6 +375,7 @@ public sealed class AgendaRepository : IAgendaRepository
         long? casoId,
         long? expedienteId,
         string? busqueda,
+        bool incluirVencimientos,
         bool soloActivos
     )
     {
@@ -381,14 +386,27 @@ public sealed class AgendaRepository : IAgendaRepository
             query = query.Where(x => x.Activo);
         }
 
-        if (desde.HasValue)
+        if (incluirVencimientos)
         {
-            query = query.Where(x => (x.FechaFin ?? x.FechaInicio) >= desde.Value);
+            query = query.Where(x =>
+                ((!desde.HasValue || (x.FechaFin ?? x.FechaInicio) >= desde.Value)
+                    && (!hasta.HasValue || x.FechaInicio <= hasta.Value))
+                || (x.FechaVencimiento.HasValue
+                    && (!desde.HasValue || x.FechaVencimiento.Value >= desde.Value)
+                    && (!hasta.HasValue || x.FechaVencimiento.Value <= hasta.Value))
+            );
         }
-
-        if (hasta.HasValue)
+        else
         {
-            query = query.Where(x => x.FechaInicio <= hasta.Value);
+            if (desde.HasValue)
+            {
+                query = query.Where(x => (x.FechaFin ?? x.FechaInicio) >= desde.Value);
+            }
+
+            if (hasta.HasValue)
+            {
+                query = query.Where(x => x.FechaInicio <= hasta.Value);
+            }
         }
 
         if (tipoEntradaAgendaId.HasValue)

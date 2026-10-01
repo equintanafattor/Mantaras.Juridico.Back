@@ -169,6 +169,7 @@ public sealed class AgendaService : IAgendaService
             request.CasoId,
             request.ExpedienteId,
             request.Busqueda,
+            request.IncluirVencimientos,
             request.SoloActivos,
             request.Page,
             request.PageSize,
@@ -185,6 +186,7 @@ public sealed class AgendaService : IAgendaService
             request.CasoId,
             request.ExpedienteId,
             request.Busqueda,
+            request.IncluirVencimientos,
             request.SoloActivos,
             cancellationToken
         );

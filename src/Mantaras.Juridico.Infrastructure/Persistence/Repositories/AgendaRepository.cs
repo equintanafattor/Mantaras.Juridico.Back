@@ -1,4 +1,5 @@
 using Mantaras.Juridico.Application.Common.Interfaces;
+using Mantaras.Juridico.Application.Features.Agenda.Responses;
 using Mantaras.Juridico.Domain.Entities;
 using Mantaras.Juridico.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,19 @@ public sealed class AgendaRepository : IAgendaRepository
     public AgendaRepository(JuridicoDbContext dbContext)
     {
         _dbContext = dbContext;
+    }
+
+    public async Task<OpcionesAgendaResponse> ObtenerOpcionesAsync(CancellationToken cancellationToken = default)
+    {
+        var tipos = await _dbContext.TiposEntradaAgenda.AsNoTracking()
+            .OrderBy(x => x.Nombre)
+            .Select(x => new OpcionAgendaResponse { Id = x.TipoEntradaAgendaId, Nombre = x.Nombre, Activo = x.Activo })
+            .ToListAsync(cancellationToken);
+        var responsables = await _dbContext.Users.AsNoTracking()
+            .OrderBy(x => x.Nombre).ThenBy(x => x.Id)
+            .Select(x => new OpcionAgendaResponse { Id = x.Id, Nombre = x.Nombre, Activo = x.Activo })
+            .ToListAsync(cancellationToken);
+        return new OpcionesAgendaResponse { TiposEntrada = tipos, Responsables = responsables };
     }
 
     public Task<EntradaAgenda?> ObtenerPorIdAsync(

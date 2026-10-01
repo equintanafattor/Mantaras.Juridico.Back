@@ -1,3 +1,4 @@
+using Mantaras.Juridico.Application.Features.Agenda.Responses;
 using Mantaras.Juridico.Domain.Entities;
 using Mantaras.Juridico.Domain.Enums;
 
@@ -5,6 +6,8 @@ namespace Mantaras.Juridico.Application.Common.Interfaces;
 
 public interface IAgendaRepository
 {
+    Task<OpcionesAgendaResponse> ObtenerOpcionesAsync(CancellationToken cancellationToken = default);
+
     Task<EntradaAgenda?> ObtenerPorIdAsync(
         long entradaAgendaId,
         bool seguimiento = true,

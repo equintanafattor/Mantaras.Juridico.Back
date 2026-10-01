@@ -7,6 +7,8 @@ namespace Mantaras.Juridico.Application.Features.Agenda.Services;
 
 public interface IAgendaService
 {
+    Task<OpcionesAgendaResponse> ObtenerOpcionesAsync(CancellationToken cancellationToken = default);
+
     Task<Result<EntradaAgendaResponse>> CrearAsync(
         GuardarEntradaAgendaRequest request,
         CancellationToken cancellationToken = default

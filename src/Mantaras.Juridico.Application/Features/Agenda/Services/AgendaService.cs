@@ -24,6 +24,11 @@ public sealed class AgendaService : IAgendaService
         _currentUser = currentUser;
     }
 
+    public Task<OpcionesAgendaResponse> ObtenerOpcionesAsync(CancellationToken cancellationToken = default)
+    {
+        return _agendaRepository.ObtenerOpcionesAsync(cancellationToken);
+    }
+
     public async Task<Result<EntradaAgendaResponse>> CrearAsync(
         GuardarEntradaAgendaRequest request,
         CancellationToken cancellationToken = default

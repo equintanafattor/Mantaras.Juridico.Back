@@ -20,6 +20,14 @@ public sealed class AgendaController : ControllerBase
         _agendaService = agendaService;
     }
 
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    [HttpGet("opciones")]
+    [ProducesResponseType(typeof(OpcionesAgendaResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<OpcionesAgendaResponse>> ObtenerOpciones(CancellationToken cancellationToken)
+    {
+        return Ok(await _agendaService.ObtenerOpcionesAsync(cancellationToken));
+    }
+
     [HttpPost]
     [ProducesResponseType(
         typeof(EntradaAgendaResponse),

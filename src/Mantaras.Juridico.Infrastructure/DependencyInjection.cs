@@ -153,6 +153,7 @@ public static class DependencyInjection
         services.AddScoped<IAutenticacionService, AutenticacionService>();
         services.AddHttpContextAccessor();
         services.AddScoped<IAgendaRepository, AgendaRepository>();
+        services.AddScoped<IDiaInhabilRepository, DiaInhabilRepository>();
         services.AddScoped<ITipoEntradaAgendaRepository, TipoEntradaAgendaRepository>();
         services.AddScoped<
             IRecordatoriosAgendaRepository,

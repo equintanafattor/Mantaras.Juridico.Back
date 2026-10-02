@@ -102,6 +102,40 @@ public sealed class RecordatoriosAgendaController : ControllerBase
             : Ok(result.Value);
     }
 
+    [HttpPut("{recordatorioAgendaId:long}")]
+    [ProducesResponseType(typeof(RecordatorioAgendaResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<RecordatorioAgendaResponse>> Reprogramar(
+        long recordatorioAgendaId,
+        [FromBody] CrearRecordatorioAgendaRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        var result = await _recordatoriosService.ReprogramarAsync(recordatorioAgendaId, request, cancellationToken);
+        if (result.IsFailure)
+        {
+            var response = CrearErrorResponse(result.Errors);
+            return ContieneError(result.Errors, AgendaErrors.RecordatorioNoEncontrado) ? NotFound(response) : BadRequest(response);
+        }
+        return Ok(result.Value);
+    }
+
+    [HttpDelete("{recordatorioAgendaId:long}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Quitar(long recordatorioAgendaId, CancellationToken cancellationToken)
+    {
+        var result = await _recordatoriosService.QuitarAsync(recordatorioAgendaId, cancellationToken);
+        if (result.IsFailure)
+        {
+            var response = CrearErrorResponse(result.Errors);
+            return ContieneError(result.Errors, AgendaErrors.RecordatorioNoEncontrado) ? NotFound(response) : BadRequest(response);
+        }
+        return NoContent();
+    }
+
     private static ApiErrorResponse CrearErrorResponse(
         IReadOnlyCollection<Error> errors
     )

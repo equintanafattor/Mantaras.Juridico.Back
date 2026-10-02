@@ -65,6 +65,19 @@ public static class AgendaErrors
         "El recordatorio solicitado no existe."
     );
 
+    public static readonly Error RecordatorioAtendido = new(
+        "Agenda.RecordatorioAtendido",
+        "Los recordatorios atendidos se conservan como historial y no se pueden quitar ni reprogramar."
+    );
+    public static readonly Error RecordatorioDatosInvalidos = new(
+        "Agenda.RecordatorioDatosInvalidos",
+        "La base debe ser Inicio o Vencimiento y la anticipación debe estar entre 0 y 525600 minutos."
+    );
+    public static readonly Error RecordatorioFechaFueraDeRango = new(
+        "Agenda.RecordatorioFechaFueraDeRango",
+        "La fecha programada del recordatorio queda fuera del rango permitido."
+    );
+
     public static readonly Error RecordatorioDuplicado = new(
         "Agenda.RecordatorioDuplicado",
         "Ya existe un recordatorio activo para esa entrada y fecha."

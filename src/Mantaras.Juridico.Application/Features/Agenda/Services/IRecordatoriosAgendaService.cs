@@ -13,6 +13,13 @@ public interface IRecordatoriosAgendaService
         CancellationToken cancellationToken = default
     );
 
+    Task<Result<RecordatorioAgendaResponse>> ReprogramarAsync(
+        long recordatorioAgendaId,
+        CrearRecordatorioAgendaRequest request,
+        CancellationToken cancellationToken = default
+    );
+    Task<Result<bool>> QuitarAsync(long recordatorioAgendaId, CancellationToken cancellationToken = default);
+
     Task<PagedResponse<RecordatorioAgendaResponse>> BuscarAsync(
         BuscarRecordatoriosAgendaRequest request,
         CancellationToken cancellationToken = default

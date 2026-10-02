@@ -14,7 +14,8 @@ public interface IRecordatoriosAgendaRepository
     Task<bool> ExisteAsync(
         long entradaAgendaId,
         DateTime fechaProgramadaUtc,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken = default,
+        long? recordatorioExcluirId = null
     );
 
     Task<IReadOnlyCollection<RecordatorioAgenda>> BuscarAsync(

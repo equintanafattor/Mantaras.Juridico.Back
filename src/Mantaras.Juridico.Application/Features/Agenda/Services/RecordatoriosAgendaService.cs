@@ -33,6 +33,9 @@ public sealed class RecordatoriosAgendaService : IRecordatoriosAgendaService
         CancellationToken cancellationToken = default
     )
     {
+        if (!DatosValidos(request))
+            return Result<RecordatorioAgendaResponse>.Failure(AgendaErrors.RecordatorioDatosInvalidos);
+
         var entrada = await _agendaRepository.ObtenerPorIdAsync(
             entradaAgendaId,
             seguimiento: false,
@@ -58,19 +61,9 @@ public sealed class RecordatoriosAgendaService : IRecordatoriosAgendaService
             );
         }
 
-        var zonaHoraria = TimeZoneInfo.FindSystemTimeZoneById(
-            entrada.ZonaHoraria
-        );
-        var fechaBaseUtc = TimeZoneInfo.ConvertTimeToUtc(
-            DateTime.SpecifyKind(
-                fechaBaseLocal.Value,
-                DateTimeKind.Unspecified
-            ),
-            zonaHoraria
-        );
-        var fechaProgramadaUtc = fechaBaseUtc.AddMinutes(
-            -request.MinutosAnticipacion
-        );
+        DateTime fechaProgramadaUtc;
+        try { fechaProgramadaUtc = CalcularFechaProgramadaUtc(entrada, fechaBaseLocal.Value, request.MinutosAnticipacion); }
+        catch (ArgumentException) { return Result<RecordatorioAgendaResponse>.Failure(AgendaErrors.RecordatorioFechaFueraDeRango); }
 
         if (
             await _recordatoriosRepository.ExisteAsync(
@@ -107,6 +100,60 @@ public sealed class RecordatoriosAgendaService : IRecordatoriosAgendaService
         return Result<RecordatorioAgendaResponse>.Success(
             MapearResponse(recordatorio)
         );
+    }
+
+    public async Task<Result<RecordatorioAgendaResponse>> ReprogramarAsync(
+        long recordatorioAgendaId,
+        CrearRecordatorioAgendaRequest request,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (!DatosValidos(request))
+            return Result<RecordatorioAgendaResponse>.Failure(AgendaErrors.RecordatorioDatosInvalidos);
+        var recordatorio = await _recordatoriosRepository.ObtenerPorIdAsync(recordatorioAgendaId, seguimiento: true, cancellationToken: cancellationToken);
+        if (recordatorio is null || !recordatorio.EntradaAgenda.Activo)
+            return Result<RecordatorioAgendaResponse>.Failure(AgendaErrors.RecordatorioNoEncontrado);
+        if (recordatorio.Atendido)
+            return Result<RecordatorioAgendaResponse>.Failure(AgendaErrors.RecordatorioAtendido);
+        var fechaBase = ObtenerFechaBaseLocal(recordatorio.EntradaAgenda, request.BaseCalculo);
+        if (!fechaBase.HasValue)
+            return Result<RecordatorioAgendaResponse>.Failure(AgendaErrors.FechaBaseRecordatorioNoDisponible);
+        DateTime fechaProgramada;
+        try { fechaProgramada = CalcularFechaProgramadaUtc(recordatorio.EntradaAgenda, fechaBase.Value, request.MinutosAnticipacion); }
+        catch (ArgumentException) { return Result<RecordatorioAgendaResponse>.Failure(AgendaErrors.RecordatorioFechaFueraDeRango); }
+        if (await _recordatoriosRepository.ExisteAsync(recordatorio.EntradaAgendaId, fechaProgramada, cancellationToken, recordatorioAgendaId))
+            return Result<RecordatorioAgendaResponse>.Failure(AgendaErrors.RecordatorioDuplicado);
+        if (recordatorio.FechaProgramadaUtc == fechaProgramada)
+            return Result<RecordatorioAgendaResponse>.Success(MapearResponse(recordatorio));
+        recordatorio.FechaProgramadaUtc = fechaProgramada;
+        recordatorio.FechaModificacion = DateTime.UtcNow;
+        recordatorio.UsuarioModificacion = _currentUser.Usuario;
+        await _recordatoriosRepository.GuardarCambiosAsync(cancellationToken);
+        return Result<RecordatorioAgendaResponse>.Success(MapearResponse(recordatorio));
+    }
+
+    public async Task<Result<bool>> QuitarAsync(long recordatorioAgendaId, CancellationToken cancellationToken = default)
+    {
+        var recordatorio = await _recordatoriosRepository.ObtenerPorIdAsync(recordatorioAgendaId, seguimiento: true, cancellationToken: cancellationToken);
+        if (recordatorio is null || !recordatorio.EntradaAgenda.Activo)
+            return Result<bool>.Failure(AgendaErrors.RecordatorioNoEncontrado);
+        if (recordatorio.Atendido)
+            return Result<bool>.Failure(AgendaErrors.RecordatorioAtendido);
+        recordatorio.Activo = false;
+        recordatorio.FechaModificacion = DateTime.UtcNow;
+        recordatorio.UsuarioModificacion = _currentUser.Usuario;
+        await _recordatoriosRepository.GuardarCambiosAsync(cancellationToken);
+        return Result<bool>.Success(true);
+    }
+
+    private static bool DatosValidos(CrearRecordatorioAgendaRequest request) =>
+        Enum.IsDefined(request.BaseCalculo) && request.MinutosAnticipacion >= 0 && request.MinutosAnticipacion <= 525600;
+
+    private static DateTime CalcularFechaProgramadaUtc(EntradaAgenda entrada, DateTime fechaBaseLocal, int minutosAnticipacion)
+    {
+        var zona = TimeZoneInfo.FindSystemTimeZoneById(entrada.ZonaHoraria);
+        return TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(fechaBaseLocal, DateTimeKind.Unspecified), zona)
+            .AddMinutes(-minutosAnticipacion);
     }
 
     public async Task<PagedResponse<RecordatorioAgendaResponse>> BuscarAsync(

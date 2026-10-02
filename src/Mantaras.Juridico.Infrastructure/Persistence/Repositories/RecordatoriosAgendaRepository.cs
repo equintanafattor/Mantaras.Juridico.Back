@@ -42,13 +42,15 @@ public sealed class RecordatoriosAgendaRepository
     public Task<bool> ExisteAsync(
         long entradaAgendaId,
         DateTime fechaProgramadaUtc,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken = default,
+        long? recordatorioExcluirId = null
     )
     {
         return _dbContext.RecordatoriosAgenda.AnyAsync(
             x =>
                 x.EntradaAgendaId == entradaAgendaId
                 && x.FechaProgramadaUtc == fechaProgramadaUtc
+                && (!recordatorioExcluirId.HasValue || x.RecordatorioAgendaId != recordatorioExcluirId.Value)
                 && x.Activo,
             cancellationToken
         );

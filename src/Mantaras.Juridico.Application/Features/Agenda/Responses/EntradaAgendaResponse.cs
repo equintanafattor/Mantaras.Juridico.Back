@@ -6,6 +6,8 @@ public sealed class EntradaAgendaResponse
 {
     public long EntradaAgendaId { get; set; }
 
+    public long? RecurrenciaAgendaId { get; set; }
+
     public long TipoEntradaAgendaId { get; set; }
 
     public string TipoEntradaNombre { get; set; } = string.Empty;

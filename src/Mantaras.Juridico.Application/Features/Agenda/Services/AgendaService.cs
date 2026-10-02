@@ -72,6 +72,52 @@ public sealed class AgendaService : IAgendaService
             _currentUser.Usuario
         );
 
+        if (request.Recurrencia is { } repeticion)
+        {
+            var fechas = GenerarFechas(request.FechaInicio, repeticion);
+            var serie = new RecurrenciaAgenda
+            {
+                Frecuencia = repeticion.Frecuencia,
+                Intervalo = repeticion.Intervalo,
+                FechaInicio = request.FechaInicio,
+                FechaFin = fechas[^1],
+                MaximoOcurrencias = fechas.Count,
+                OcurrenciasGeneradas = fechas.Count,
+                ZonaHoraria = entrada.ZonaHoraria,
+                FechaCreacion = ahora,
+                UsuarioCreacion = _currentUser.Usuario,
+                Activo = true,
+            };
+            entrada.Recurrencia = serie;
+            for (var i = 1; i < fechas.Count; i++)
+            {
+                var desplazamiento = fechas[i].DayNumber - request.FechaInicio.DayNumber;
+                var ocurrencia = new EntradaAgenda
+                {
+                    Recurrencia = serie,
+                    TipoEntradaAgendaId = entrada.TipoEntradaAgendaId,
+                    TipoEntrada = validacion.Value!,
+                    Titulo = entrada.Titulo,
+                    Descripcion = entrada.Descripcion,
+                    Prioridad = entrada.Prioridad,
+                    FechaInicio = fechas[i],
+                    HoraInicio = entrada.HoraInicio,
+                    FechaFin = entrada.FechaFin?.AddDays(desplazamiento),
+                    HoraFin = entrada.HoraFin,
+                    FechaVencimiento = entrada.FechaVencimiento?.AddDays(desplazamiento),
+                    HoraVencimiento = entrada.HoraVencimiento,
+                    ZonaHoraria = entrada.ZonaHoraria,
+                    FechaCreacion = ahora,
+                    UsuarioCreacion = _currentUser.Usuario,
+                    Activo = true,
+                };
+                ReemplazarRelaciones(ocurrencia, request);
+                RecordatoriosAgendaFactory.AgregarPredeterminadosDeTipo(
+                    ocurrencia, validacion.Value!.RecordatoriosPredeterminados, ahora, _currentUser.Usuario
+                );
+                await _agendaRepository.AgregarAsync(ocurrencia, cancellationToken);
+            }
+        }
         await _agendaRepository.AgregarAsync(entrada, cancellationToken);
         await _agendaRepository.GuardarCambiosAsync(cancellationToken);
 
@@ -126,6 +172,14 @@ public sealed class AgendaService : IAgendaService
         if (entrada is null)
         {
             return Result<EntradaAgendaResponse>.Failure(AgendaErrors.NoEncontrada);
+        }
+
+        // Una edición siempre afecta sólo esta ocurrencia.
+        if (request.Recurrencia is not null)
+        {
+            return Result<EntradaAgendaResponse>.Failure(
+                new Error("Agenda.RecurrenciaEdicion", "La recurrencia sólo puede definirse al crear una entrada.")
+            );
         }
 
         var validacion = await ValidarReferenciasAsync(
@@ -432,6 +486,7 @@ public sealed class AgendaService : IAgendaService
         return new EntradaAgendaResponse
         {
             EntradaAgendaId = entrada.EntradaAgendaId,
+            RecurrenciaAgendaId = entrada.RecurrenciaAgendaId,
             TipoEntradaAgendaId = entrada.TipoEntradaAgendaId,
             TipoEntradaNombre = entrada.TipoEntrada.Nombre,
             TipoEntradaColor = entrada.TipoEntrada.Color,
@@ -469,6 +524,7 @@ public sealed class AgendaService : IAgendaService
         return new EntradaAgendaListadoResponse
         {
             EntradaAgendaId = entrada.EntradaAgendaId,
+            RecurrenciaAgendaId = entrada.RecurrenciaAgendaId,
             TipoEntradaAgendaId = entrada.TipoEntradaAgendaId,
             TipoEntradaNombre = entrada.TipoEntrada.Nombre,
             TipoEntradaColor = entrada.TipoEntrada.Color,
@@ -531,6 +587,32 @@ public sealed class AgendaService : IAgendaService
     private static string? NormalizarOpcional(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static List<DateOnly> GenerarFechas(DateOnly inicio, RecurrenciaEntradaRequest regla)
+    {
+        var fechas = new List<DateOnly>(regla.CantidadOcurrencias);
+        for (var i = 0; i < regla.CantidadOcurrencias; i++)
+        {
+            var salto = checked(i * regla.Intervalo);
+            var fecha = regla.Frecuencia switch
+            {
+                FrecuenciaRecurrenciaAgenda.Diaria => inicio.AddDays(salto),
+                FrecuenciaRecurrenciaAgenda.Semanal => inicio.AddDays(checked(salto * 7)),
+                FrecuenciaRecurrenciaAgenda.Mensual => FechaMes(inicio, salto),
+                FrecuenciaRecurrenciaAgenda.Anual => FechaMes(inicio, checked(salto * 12)),
+                _ => throw new ArgumentOutOfRangeException(nameof(regla.Frecuencia)),
+            };
+            fechas.Add(fecha);
+        }
+        return fechas;
+    }
+
+    private static DateOnly FechaMes(DateOnly inicio, int meses)
+    {
+        var primerDia = new DateOnly(inicio.Year, inicio.Month, 1).AddMonths(meses);
+        return new DateOnly(primerDia.Year, primerDia.Month,
+            Math.Min(inicio.Day, DateTime.DaysInMonth(primerDia.Year, primerDia.Month)));
     }
 
     private static bool PuedeCambiarEstado(

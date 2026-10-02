@@ -31,4 +31,14 @@ public sealed class GuardarEntradaAgendaRequest
     public IReadOnlyCollection<long> ExpedienteIds { get; set; } = Array.Empty<long>();
 
     public IReadOnlyCollection<long> ResponsableIds { get; set; } = Array.Empty<long>();
+
+    // Sólo se permite al crear. La primera ocurrencia es la entrada solicitada.
+    public RecurrenciaEntradaRequest? Recurrencia { get; set; }
+}
+
+public sealed class RecurrenciaEntradaRequest
+{
+    public FrecuenciaRecurrenciaAgenda Frecuencia { get; set; }
+    public int Intervalo { get; set; } = 1;
+    public int CantidadOcurrencias { get; set; }
 }

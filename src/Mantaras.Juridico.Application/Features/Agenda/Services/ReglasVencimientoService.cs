@@ -212,6 +212,13 @@ public sealed class ReglasVencimientoService : IReglasVencimientoService
             );
         }
 
+        if (!regla.TipoEntrada.Activo)
+        {
+            return Result<AplicacionReglaVencimientoResponse>.Failure(
+                AgendaErrors.TipoNoEncontradoOInactivo
+            );
+        }
+
         var clienteIds = request.ClienteIds.ToHashSet();
         var casoIds = request.CasoIds.ToHashSet();
         var expedienteIds = request.ExpedienteIds.ToHashSet();

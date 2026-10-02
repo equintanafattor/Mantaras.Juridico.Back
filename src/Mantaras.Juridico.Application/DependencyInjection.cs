@@ -1,3 +1,4 @@
+using Mantaras.Juridico.Application.Features.TiposEntradaAgenda.Services;
 using FluentValidation;
 using Mantaras.Juridico.Application.Features.Agenda.Services;
 using Mantaras.Juridico.Application.Features.Casos.Services;
@@ -20,6 +21,7 @@ public static class DependencyInjection
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
 
         services.AddScoped<IAgendaService, AgendaService>();
+        services.AddScoped<ITiposEntradaAgendaService, TiposEntradaAgendaService>();
         services.AddScoped<IReglasVencimientoService, ReglasVencimientoService>();
         services.AddScoped<
             IRecordatoriosAgendaService,

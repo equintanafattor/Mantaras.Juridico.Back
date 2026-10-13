@@ -29,6 +29,16 @@ public static class UsuarioErrors
         "No se puede desactivar al último administrador activo."
     );
 
+    public static readonly Error UltimoAdministradorRol = new(
+        "Usuarios.UltimoAdministradorRol",
+        "No se puede quitar el rol de administrador al último administrador activo."
+    );
+
+    public static readonly Error PasswordInvalida = new(
+        "Usuarios.PasswordInvalida",
+        "La contraseña no cumple con los requisitos de seguridad."
+    );
+
     public static readonly Error CreacionFallida = new(
     "Usuarios.CreacionFallida",
     "No se pudo crear el usuario."

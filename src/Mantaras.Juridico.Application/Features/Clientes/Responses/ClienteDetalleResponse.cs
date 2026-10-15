@@ -24,6 +24,8 @@ public sealed class ClienteDetalleResponse
 
     public string? Telefono { get; set; }
 
+    public string? Celular { get; set; }
+
     public string? Email { get; set; }
 
     public string? Domicilio { get; set; }

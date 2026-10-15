@@ -27,6 +27,11 @@ public sealed class ObservacionConfiguration
             .HasMaxLength(2000)
             .IsRequired();
 
+        builder.Property(x => x.FechaMovimiento).HasColumnType("date");
+
+        builder.HasIndex(x => new { x.CasoId, x.FechaMovimiento, x.FechaCreacion });
+        builder.HasIndex(x => new { x.ExpedienteId, x.FechaMovimiento, x.FechaCreacion });
+
         builder.Property(x => x.FechaCreacion)
             .IsRequired();
 

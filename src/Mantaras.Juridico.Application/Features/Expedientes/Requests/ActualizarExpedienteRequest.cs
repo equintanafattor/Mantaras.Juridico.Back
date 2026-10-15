@@ -19,4 +19,6 @@ public sealed class ActualizarExpedienteRequest
     public DateOnly? FechaInicio { get; set; }
 
     public string? EstadoLegal { get; set; }
+
+    public string? TipoTramite { get; set; }
 }

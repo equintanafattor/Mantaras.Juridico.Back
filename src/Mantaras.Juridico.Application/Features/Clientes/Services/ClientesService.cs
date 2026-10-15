@@ -54,6 +54,7 @@ public class ClientesService : IClientesService
             DerivadoPorEmail = NormalizarOpcional(request.DerivadoPorEmail),
             FechaNacimiento = request.FechaNacimiento,
             Telefono = NormalizarOpcional(request.Telefono),
+            Celular = NormalizarOpcional(request.Celular),
             Email = NormalizarOpcional(request.Email),
             Domicilio = NormalizarOpcional(request.Domicilio),
             Localidad = NormalizarOpcional(request.Localidad),
@@ -134,6 +135,7 @@ public class ClientesService : IClientesService
         cliente.DerivadoPorEmail = NormalizarOpcional(request.DerivadoPorEmail);
         cliente.FechaNacimiento = request.FechaNacimiento;
         cliente.Telefono = NormalizarOpcional(request.Telefono);
+        cliente.Celular = NormalizarOpcional(request.Celular);
         cliente.Email = NormalizarOpcional(request.Email);
         cliente.Domicilio = NormalizarOpcional(request.Domicilio);
         cliente.Localidad = NormalizarOpcional(request.Localidad);
@@ -279,6 +281,7 @@ public class ClientesService : IClientesService
             DerivadoPorEmail = cliente.DerivadoPorEmail,
             FechaNacimiento = cliente.FechaNacimiento,
             Telefono = cliente.Telefono,
+            Celular = cliente.Celular,
             Email = cliente.Email,
             Domicilio = cliente.Domicilio,
             Localidad = cliente.Localidad,
@@ -303,6 +306,7 @@ public class ClientesService : IClientesService
             DerivadoPorEmail = cliente.DerivadoPorEmail,
             FechaNacimiento = cliente.FechaNacimiento,
             Telefono = cliente.Telefono,
+            Celular = cliente.Celular,
             Email = cliente.Email,
             Domicilio = cliente.Domicilio,
             Localidad = cliente.Localidad,

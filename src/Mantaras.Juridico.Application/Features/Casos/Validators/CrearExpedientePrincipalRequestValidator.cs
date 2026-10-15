@@ -26,6 +26,10 @@ public sealed class CrearExpedientePrincipalRequestValidator
             .MaximumLength(500)
             .WithMessage("El juzgado no puede superar los 500 caracteres.");
 
+        RuleFor(x => x.TipoTramite)
+            .MaximumLength(200)
+            .WithMessage("El tipo de trámite no puede superar los 200 caracteres.");
+
         RuleFor(x => x.EstadoLegal)
             .MaximumLength(200)
             .WithMessage(

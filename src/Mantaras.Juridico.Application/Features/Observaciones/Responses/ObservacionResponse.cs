@@ -6,6 +6,8 @@ public sealed class ObservacionResponse
 
     public string Texto { get; set; } = string.Empty;
 
+    public DateOnly? FechaMovimiento { get; set; }
+
     public DateTime FechaCreacion { get; set; }
 
     public string UsuarioCreacion { get; set; } = string.Empty;

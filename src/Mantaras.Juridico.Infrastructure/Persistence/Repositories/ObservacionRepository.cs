@@ -38,7 +38,8 @@ public sealed class ObservacionRepository : IObservacionRepository
             .Observaciones
             .AsNoTracking()
             .Where(observacion => observacion.CasoId == casoId)
-            .OrderByDescending(observacion => observacion.FechaCreacion)
+            .OrderByDescending(observacion => observacion.FechaMovimiento)
+            .ThenByDescending(observacion => observacion.FechaCreacion)
             .ThenByDescending(observacion => observacion.ObservacionId)
             .ToArrayAsync(cancellationToken);
     }
@@ -53,7 +54,8 @@ public sealed class ObservacionRepository : IObservacionRepository
             .Observaciones
             .AsNoTracking()
             .Where(observacion => observacion.ExpedienteId == expedienteId)
-            .OrderByDescending(observacion => observacion.FechaCreacion)
+            .OrderByDescending(observacion => observacion.FechaMovimiento)
+            .ThenByDescending(observacion => observacion.FechaCreacion)
             .ThenByDescending(observacion => observacion.ObservacionId)
             .ToArrayAsync(cancellationToken);
     }

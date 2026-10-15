@@ -84,6 +84,7 @@ public sealed class ExpedientesService : IExpedientesService
             Juzgado = NormalizarOpcional(request.Juzgado),
             FechaInicio = request.FechaInicio,
             EstadoLegal = NormalizarOpcional(request.EstadoLegal),
+            TipoTramite = NormalizarOpcional(request.TipoTramite),
             ExpedientePadre = padreResult.Padre,
             FechaCreacion = DateTime.UtcNow,
             UsuarioCreacion = _currentUser.Usuario,
@@ -230,6 +231,7 @@ public sealed class ExpedientesService : IExpedientesService
         expediente.Juzgado = NormalizarOpcional(request.Juzgado);
         expediente.FechaInicio = request.FechaInicio;
         expediente.EstadoLegal = NormalizarOpcional(request.EstadoLegal);
+        expediente.TipoTramite = NormalizarOpcional(request.TipoTramite);
         expediente.FechaModificacion = DateTime.UtcNow;
         expediente.UsuarioModificacion = _currentUser.Usuario;
 
@@ -443,6 +445,7 @@ public sealed class ExpedientesService : IExpedientesService
             Juzgado = expediente.Juzgado,
             FechaInicio = expediente.FechaInicio,
             EstadoLegal = expediente.EstadoLegal,
+            TipoTramite = expediente.TipoTramite,
             ExpedientePadre = expediente.ExpedientePadre is null
                 ? null
                 : MapearRelacionado(expediente.ExpedientePadre),
@@ -470,6 +473,7 @@ public sealed class ExpedientesService : IExpedientesService
             Juzgado = expediente.Juzgado,
             FechaInicio = expediente.FechaInicio,
             EstadoLegal = expediente.EstadoLegal,
+            TipoTramite = expediente.TipoTramite,
             FechaCreacion = expediente.FechaCreacion,
             FechaModificacion = expediente.FechaModificacion,
             Activo = expediente.Activo,

@@ -12,6 +12,8 @@ public class Expediente : AuditableEntity
     public string? Juzgado { get; set; }
     public DateOnly? FechaInicio { get; set; }
     public string? EstadoLegal { get; set; }
+
+    public string? TipoTramite { get; set; }
     public ICollection<Observacion> HistorialObservaciones { get; set; } =
         new List<Observacion>();
     public ICollection<CasoExpediente> Casos { get; set; } =

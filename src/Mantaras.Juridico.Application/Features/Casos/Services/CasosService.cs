@@ -134,6 +134,7 @@ public sealed class CasosService : ICasosService
             ),
             Caratula = request.Expediente.Caratula.Trim(),
             Juzgado = NormalizarOpcional(request.Expediente.Juzgado),
+            TipoTramite = NormalizarOpcional(request.Expediente.TipoTramite),
             FechaInicio = request.Expediente.FechaInicio,
             EstadoLegal = NormalizarOpcional(
                 request.Expediente.EstadoLegal

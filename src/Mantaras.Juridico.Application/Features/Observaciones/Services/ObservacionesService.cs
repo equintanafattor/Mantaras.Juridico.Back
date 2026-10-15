@@ -128,6 +128,13 @@ public sealed class ObservacionesService : IObservacionesService
             );
         }
 
+        if (request.FechaMovimiento.HasValue)
+        {
+            return Result<ObservacionResponse>.Failure(new Error(
+                "Observacion.FechaMovimientoNoCorresponde",
+                "La fecha de movimiento sólo corresponde a expedientes administrativos o judiciales."));
+        }
+
         var observacion = CrearObservacion(request);
         observacion.ClienteId = clienteId;
 
@@ -154,6 +161,7 @@ public sealed class ObservacionesService : IObservacionesService
 
         var observacion = CrearObservacion(request);
         observacion.CasoId = casoId;
+        observacion.FechaMovimiento = request.FechaMovimiento ?? ObtenerHoyArgentina();
 
         return await GuardarAsync(observacion, cancellationToken);
     }
@@ -179,8 +187,15 @@ public sealed class ObservacionesService : IObservacionesService
 
         var observacion = CrearObservacion(request);
         observacion.ExpedienteId = expedienteId;
+        observacion.FechaMovimiento = request.FechaMovimiento ?? ObtenerHoyArgentina();
 
         return await GuardarAsync(observacion, cancellationToken);
+    }
+
+    private static DateOnly ObtenerHoyArgentina()
+    {
+        var zona = TimeZoneInfo.FindSystemTimeZoneById("America/Argentina/Buenos_Aires");
+        return DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, zona));
     }
 
     private Observacion CrearObservacion(
@@ -234,6 +249,7 @@ public sealed class ObservacionesService : IObservacionesService
         {
             ObservacionId = observacion.ObservacionId,
             Texto = observacion.Texto,
+            FechaMovimiento = observacion.FechaMovimiento,
             FechaCreacion = observacion.FechaCreacion,
             UsuarioCreacion =
                 observacion.UsuarioCreacion ?? "Sistema",

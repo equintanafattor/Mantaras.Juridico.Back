@@ -6,6 +6,12 @@ public sealed class HojaResumenCasoResponse
 
     public bool Registrada { get; set; }
 
+    public DateOnly? FechaAdquisicionDerecho { get; set; }
+
+    public string? LeyAplicada { get; set; }
+
+    public string? ObservacionesGenerales { get; set; }
+
     public bool? TieneCalculoPrevio { get; set; }
 
     public string? HaberInicialReajustadoCaracteristicas { get; set; }

@@ -32,6 +32,15 @@ public sealed class HojaResumenCasoConfiguration
             }
         );
 
+        builder.Property(x => x.FechaAdquisicionDerecho)
+            .HasColumnType("date");
+
+        builder.Property(x => x.LeyAplicada)
+            .HasMaxLength(200);
+
+        builder.Property(x => x.ObservacionesGenerales)
+            .HasMaxLength(6500);
+
         builder.HasKey(x => x.CasoId);
 
         builder.Property(x => x.CasoId)

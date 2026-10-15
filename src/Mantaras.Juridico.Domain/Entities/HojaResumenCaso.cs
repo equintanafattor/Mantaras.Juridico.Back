@@ -4,6 +4,12 @@ public sealed class HojaResumenCaso
 {
     public long CasoId { get; set; }
 
+    public DateOnly? FechaAdquisicionDerecho { get; set; }
+
+    public string? LeyAplicada { get; set; }
+
+    public string? ObservacionesGenerales { get; set; }
+
     public bool? TieneCalculoPrevio { get; set; }
 
     public string? HaberInicialReajustadoCaracteristicas { get; set; }

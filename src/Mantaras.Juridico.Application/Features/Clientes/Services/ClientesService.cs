@@ -332,6 +332,14 @@ public class ClientesService : IClientesService
                     TipoExpedienteAdministrativoActivo = casoCliente.Caso.TipoExpedienteAdministrativo?.Activo,
                     TipoParticipacion = casoCliente.TipoParticipacion,
                     EsPrincipal = casoCliente.EsPrincipal,
+                    ClientePrincipalId = casoCliente.Caso.Clientes
+                        .Where(participante => participante.EsPrincipal)
+                        .Select(participante => (long?)participante.ClienteId)
+                        .FirstOrDefault(),
+                    ClientePrincipalNombre = casoCliente.Caso.Clientes
+                        .Where(participante => participante.EsPrincipal)
+                        .Select(participante => $"{participante.Cliente.Apellido}, {participante.Cliente.Nombre}")
+                        .FirstOrDefault(),
                     Activo = casoCliente.Caso.Activo,
                     Expedientes = casoCliente
                         .Caso.Expedientes.Select(relacion => relacion.Expediente)

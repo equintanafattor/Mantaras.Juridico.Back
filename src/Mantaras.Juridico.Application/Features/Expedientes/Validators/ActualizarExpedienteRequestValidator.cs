@@ -1,5 +1,6 @@
 using FluentValidation;
 using Mantaras.Juridico.Application.Features.Expedientes.Requests;
+using Mantaras.Juridico.Domain.Entities;
 using Mantaras.Juridico.Domain.Enums;
 
 namespace Mantaras.Juridico.Application.Features.Expedientes.Validators;
@@ -77,5 +78,32 @@ public sealed class ActualizarExpedienteRequestValidator
         RuleFor(x => x.EstadoLegal)
             .MaximumLength(200)
             .WithMessage("El estado legal no puede superar los 200 caracteres.");
+
+        When(x => x.EnvioCobro is not null, () =>
+        {
+            RuleFor(x => x.EnvioCobro!.TipoDocumento)
+                .IsInEnum()
+                .WithMessage("El tipo de documento de cobro informado no es válido.")
+                .OverridePropertyName("EnvioCobro.TipoDocumento");
+
+            RuleFor(x => x.EnvioCobro!.FechaEnvio)
+                .NotEmpty()
+                .WithMessage("La fecha de envío es obligatoria.")
+                .Must(fecha => fecha <= ObtenerFechaActual())
+                .WithMessage("La fecha de envío no puede ser posterior a la fecha actual.")
+                .OverridePropertyName("EnvioCobro.FechaEnvio");
+        });
+    }
+
+    private static DateOnly ObtenerFechaActual()
+    {
+        return DateOnly.FromDateTime(
+            TimeZoneInfo.ConvertTimeFromUtc(
+                DateTime.UtcNow,
+                TimeZoneInfo.FindSystemTimeZoneById(
+                    EntradaAgenda.ZonaHorariaPredeterminada
+                )
+            )
+        );
     }
 }

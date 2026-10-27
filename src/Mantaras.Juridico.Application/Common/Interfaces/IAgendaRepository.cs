@@ -87,6 +87,11 @@ public interface IAgendaRepository
         CancellationToken cancellationToken = default
     );
 
+    Task<ReglaVencimiento?> ObtenerReglaPorCodigoAsync(
+        string codigo,
+        CancellationToken cancellationToken = default
+    );
+
     Task<bool> ExisteNombreReglaAsync(
         string nombre,
         long? reglaVencimientoIdExcluir = null,

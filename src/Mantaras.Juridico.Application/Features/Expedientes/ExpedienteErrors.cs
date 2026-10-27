@@ -43,4 +43,19 @@ public static class ExpedienteErrors
         "Expedientes.PrincipalDuplicado",
         "El caso ya tiene un expediente principal."
     );
+
+    public static readonly Error EnvioCobroYaRegistrado = new(
+        "Expedientes.EnvioCobroYaRegistrado",
+        "El expediente ya tiene un envío de cobro registrado con otros datos. La corrección, el reenvío y la anulación de envíos todavía no están habilitados."
+    );
+
+    public static readonly Error EnvioCobroExpedienteInactivo = new(
+        "Expedientes.EnvioCobroExpedienteInactivo",
+        "No se puede registrar un envío de cobro en un expediente dado de baja."
+    );
+
+    public static readonly Error SeguimientoCobroYaGenerado = new(
+        "Expedientes.SeguimientoCobroYaGenerado",
+        "Ya existe un seguimiento de cobro generado para ese envío."
+    );
 }

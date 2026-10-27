@@ -25,6 +25,8 @@ public sealed class ExpedienteDetalleResponse
 
     public string? TipoTramite { get; set; }
 
+    public EnvioCobroResponse? EnvioCobro { get; set; }
+
     public ExpedienteRelacionadoResponse? ExpedientePadre { get; set; }
 
     public IReadOnlyCollection<ExpedienteRelacionadoResponse> ExpedientesDerivados { get; set; } =

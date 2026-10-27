@@ -37,4 +37,9 @@ public interface IExpedientesService
         long expedienteId,
         CancellationToken cancellationToken = default
     );
+
+    Task<PagedResponse<ExpedienteCobroResponse>> BuscarCobroAsync(
+        BuscarExpedientesCobroRequest request,
+        CancellationToken cancellationToken = default
+    );
 }

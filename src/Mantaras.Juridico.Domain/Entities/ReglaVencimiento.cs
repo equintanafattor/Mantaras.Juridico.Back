@@ -5,7 +5,11 @@ namespace Mantaras.Juridico.Domain.Entities;
 
 public sealed class ReglaVencimiento : AuditableEntity
 {
+    public const string CodigoSeguimientoCobroJudicial = "SEGUIMIENTO_COBRO_JUDICIAL";
+
     public long ReglaVencimientoId { get; set; }
+
+    public string? Codigo { get; set; }
 
     public long TipoEntradaAgendaId { get; set; }
 

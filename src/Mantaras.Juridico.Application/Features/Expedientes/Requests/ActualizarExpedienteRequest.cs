@@ -21,4 +21,6 @@ public sealed class ActualizarExpedienteRequest
     public string? EstadoLegal { get; set; }
 
     public string? TipoTramite { get; set; }
+
+    public RegistrarEnvioCobroRequest? EnvioCobro { get; set; }
 }

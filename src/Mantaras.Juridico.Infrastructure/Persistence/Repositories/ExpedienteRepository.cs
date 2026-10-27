@@ -24,6 +24,9 @@ public sealed class ExpedienteRepository : IExpedienteRepository
             .Include(x => x.Casos)
                 .ThenInclude(x => x.Caso)
                     .ThenInclude(x => x.TipoBeneficio)
+            .Include(x => x.EnviosCobro.Where(envio => envio.Activo))
+                .ThenInclude(x => x.AgendaGeneracionRegla)
+                    .ThenInclude(x => x.EntradaAgenda)
             .FirstOrDefaultAsync(
                 x => x.ExpedienteId == expedienteId,
                 cancellationToken
@@ -40,6 +43,9 @@ public sealed class ExpedienteRepository : IExpedienteRepository
             .Include(x => x.Casos)
                 .ThenInclude(x => x.Caso)
                     .ThenInclude(x => x.TipoBeneficio)
+            .Include(x => x.EnviosCobro.Where(envio => envio.Activo))
+                .ThenInclude(x => x.AgendaGeneracionRegla)
+                    .ThenInclude(x => x.EntradaAgenda)
             .Include(x => x.ExpedientePadre)
             .Include(x => x.ExpedientesDerivados)
             .FirstOrDefaultAsync(
@@ -78,6 +84,9 @@ public sealed class ExpedienteRepository : IExpedienteRepository
             .Include(x => x.Casos)
                 .ThenInclude(x => x.Caso)
                     .ThenInclude(x => x.TipoBeneficio)
+            .Include(x => x.EnviosCobro.Where(envio => envio.Activo))
+                .ThenInclude(x => x.AgendaGeneracionRegla)
+                    .ThenInclude(x => x.EntradaAgenda)
             .OrderByDescending(x => x.FechaCreacion)
             .ThenBy(x => x.Caratula)
             .Skip((page - 1) * pageSize)
@@ -97,6 +106,56 @@ public sealed class ExpedienteRepository : IExpedienteRepository
             casoId,
             busqueda,
             soloActivos
+        ).CountAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyCollection<Expediente>> BuscarCobroAsync(
+        string? busqueda,
+        bool soloActivos,
+        bool? seguimientoVencido,
+        DateOnly fechaActual,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return await ConstruirConsultaCobro(
+            busqueda,
+            soloActivos,
+            seguimientoVencido,
+            fechaActual
+        )
+            .Include(x => x.Casos)
+                .ThenInclude(x => x.Caso)
+                    .ThenInclude(x => x.TipoBeneficio)
+            .Include(x => x.EnviosCobro.Where(envio => envio.Activo))
+                .ThenInclude(x => x.AgendaGeneracionRegla)
+                    .ThenInclude(x => x.EntradaAgenda)
+            .OrderBy(x => x.EnviosCobro
+                .Where(envio => envio.Activo)
+                .Min(envio =>
+                    envio.AgendaGeneracionRegla.EntradaAgenda.FechaVencimiento
+                ))
+            .ThenBy(x => x.ExpedienteId)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<int> ContarCobroAsync(
+        string? busqueda,
+        bool soloActivos,
+        bool? seguimientoVencido,
+        DateOnly fechaActual,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return ConstruirConsultaCobro(
+            busqueda,
+            soloActivos,
+            seguimientoVencido,
+            fechaActual
         ).CountAsync(cancellationToken);
     }
 
@@ -136,6 +195,31 @@ public sealed class ExpedienteRepository : IExpedienteRepository
     )
     {
         return _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private IQueryable<Expediente> ConstruirConsultaCobro(
+        string? busqueda,
+        bool soloActivos,
+        bool? seguimientoVencido,
+        DateOnly fechaActual
+    )
+    {
+        var query = ConstruirConsulta(null, busqueda, soloActivos);
+
+        return seguimientoVencido switch
+        {
+            true => query.Where(x => x.EnviosCobro.Any(envio =>
+                envio.Activo
+                && envio.AgendaGeneracionRegla.EntradaAgenda.FechaVencimiento
+                    < fechaActual
+            )),
+            false => query.Where(x => x.EnviosCobro.Any(envio =>
+                envio.Activo
+                && envio.AgendaGeneracionRegla.EntradaAgenda.FechaVencimiento
+                    >= fechaActual
+            )),
+            null => query.Where(x => x.EnviosCobro.Any(envio => envio.Activo)),
+        };
     }
 
     private IQueryable<Expediente> ConstruirConsulta(

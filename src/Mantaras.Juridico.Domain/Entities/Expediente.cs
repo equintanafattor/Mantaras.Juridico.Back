@@ -21,4 +21,6 @@ public class Expediente : AuditableEntity
     public Expediente? ExpedientePadre { get; set; }
     public TipoExpediente TipoExpediente { get; set; }
     public ICollection<Expediente> ExpedientesDerivados { get; set; } = new List<Expediente>();
+    public ICollection<EnvioCobroExpediente> EnviosCobro { get; set; } =
+        new List<EnvioCobroExpediente>();
 }

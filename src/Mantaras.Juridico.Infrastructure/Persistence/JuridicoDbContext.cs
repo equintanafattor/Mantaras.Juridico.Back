@@ -75,6 +75,9 @@ public class JuridicoDbContext : IdentityDbContext<UsuarioIdentity, IdentityRole
 
     public DbSet<DiaInhabil> DiasInhabiles => Set<DiaInhabil>();
 
+    public DbSet<EnvioCobroExpediente> EnviosCobroExpedientes =>
+        Set<EnvioCobroExpediente>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

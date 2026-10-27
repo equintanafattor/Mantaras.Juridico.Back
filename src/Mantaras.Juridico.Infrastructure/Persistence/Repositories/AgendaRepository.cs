@@ -256,6 +256,21 @@ public sealed class AgendaRepository : IAgendaRepository
         );
     }
 
+    public Task<ReglaVencimiento?> ObtenerReglaPorCodigoAsync(
+        string codigo,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return _dbContext.ReglasVencimiento
+            .Include(x => x.TipoEntrada)
+                .ThenInclude(x => x.RecordatoriosPredeterminados)
+            .Include(x => x.RecordatoriosPredeterminados)
+            .FirstOrDefaultAsync(
+                x => x.Codigo == codigo,
+                cancellationToken
+            );
+    }
+
     public Task<bool> ExisteNombreReglaAsync(
         string nombre,
         long? reglaVencimientoIdExcluir = null,

@@ -35,6 +35,24 @@ public interface IExpedienteRepository
         CancellationToken cancellationToken = default
     );
 
+    Task<IReadOnlyCollection<Expediente>> BuscarCobroAsync(
+        string? busqueda,
+        bool soloActivos,
+        bool? seguimientoVencido,
+        DateOnly fechaActual,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default
+    );
+
+    Task<int> ContarCobroAsync(
+        string? busqueda,
+        bool soloActivos,
+        bool? seguimientoVencido,
+        DateOnly fechaActual,
+        CancellationToken cancellationToken = default
+    );
+
     Task GuardarCambiosAsync(
         CancellationToken cancellationToken = default
     );

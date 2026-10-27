@@ -25,6 +25,8 @@ public sealed class ExpedienteResponse
 
     public string? TipoTramite { get; set; }
 
+    public EnvioCobroResponse? EnvioCobro { get; set; }
+
     public DateTime FechaCreacion { get; set; }
 
     public DateTime? FechaModificacion { get; set; }

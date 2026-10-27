@@ -100,6 +100,24 @@ public sealed class ExpedientesController : ControllerBase
         return Ok(response);
     }
 
+    [HttpGet("cobro")]
+    [ProducesResponseType(
+        typeof(PagedResponse<ExpedienteCobroResponse>),
+        StatusCodes.Status200OK
+    )]
+    public async Task<ActionResult<PagedResponse<ExpedienteCobroResponse>>> BuscarCobro(
+        [FromQuery] BuscarExpedientesCobroRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await _expedientesService.BuscarCobroAsync(
+            request,
+            cancellationToken
+        );
+
+        return Ok(response);
+    }
+
     [HttpPut("{expedienteId:long}")]
     [ProducesResponseType(
         typeof(ExpedienteResponse),

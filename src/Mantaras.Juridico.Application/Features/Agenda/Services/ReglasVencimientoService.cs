@@ -198,23 +198,92 @@ public sealed class ReglasVencimientoService : IReglasVencimientoService
             cancellationToken: cancellationToken
         );
 
-        if (regla is null)
+        var generacionResult = await PrepararGeneracionAsync(
+            regla,
+            request,
+            claveIdempotencia,
+            cancellationToken
+        );
+
+        if (generacionResult.IsFailure)
         {
             return Result<AplicacionReglaVencimientoResponse>.Failure(
+                generacionResult.Errors
+            );
+        }
+
+        await _agendaRepository.GuardarCambiosAsync(cancellationToken);
+
+        return Result<AplicacionReglaVencimientoResponse>.Success(
+            MapearAplicacionResponse(generacionResult.Value!)
+        );
+    }
+
+    public async Task<Result<AgendaGeneracionRegla>> PrepararAplicacionPorCodigoAsync(
+        string codigoRegla,
+        AplicarReglaVencimientoRequest request,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var regla = await _agendaRepository.ObtenerReglaPorCodigoAsync(
+            codigoRegla,
+            cancellationToken
+        );
+
+        if (regla is null)
+        {
+            return Result<AgendaGeneracionRegla>.Failure(
+                AgendaErrors.ReglaNoEncontrada
+            );
+        }
+
+        var claveIdempotencia = ConstruirClaveIdempotencia(
+            regla.ReglaVencimientoId,
+            request.ClaveIdempotencia
+        );
+        var generacionExistente = await _agendaRepository
+            .ObtenerGeneracionPorClaveAsync(
+                claveIdempotencia,
+                cancellationToken
+            );
+
+        if (generacionExistente is not null)
+        {
+            return Result<AgendaGeneracionRegla>.Success(generacionExistente);
+        }
+
+        return await PrepararGeneracionAsync(
+            regla,
+            request,
+            claveIdempotencia,
+            cancellationToken
+        );
+    }
+
+    private async Task<Result<AgendaGeneracionRegla>> PrepararGeneracionAsync(
+        ReglaVencimiento? regla,
+        AplicarReglaVencimientoRequest request,
+        string claveIdempotencia,
+        CancellationToken cancellationToken
+    )
+    {
+        if (regla is null)
+        {
+            return Result<AgendaGeneracionRegla>.Failure(
                 AgendaErrors.ReglaNoEncontrada
             );
         }
 
         if (!regla.Activo)
         {
-            return Result<AplicacionReglaVencimientoResponse>.Failure(
+            return Result<AgendaGeneracionRegla>.Failure(
                 AgendaErrors.ReglaInactiva
             );
         }
 
         if (!regla.TipoEntrada.Activo)
         {
-            return Result<AplicacionReglaVencimientoResponse>.Failure(
+            return Result<AgendaGeneracionRegla>.Failure(
                 AgendaErrors.TipoNoEncontradoOInactivo
             );
         }
@@ -235,7 +304,7 @@ public sealed class ReglasVencimientoService : IReglasVencimientoService
 
         if (!origenValido)
         {
-            return Result<AplicacionReglaVencimientoResponse>.Failure(
+            return Result<AgendaGeneracionRegla>.Failure(
                 AgendaErrors.OrigenFechaBaseNoEncontrado
             );
         }
@@ -250,9 +319,7 @@ public sealed class ReglasVencimientoService : IReglasVencimientoService
 
         if (errorReferencias is not null)
         {
-            return Result<AplicacionReglaVencimientoResponse>.Failure(
-                errorReferencias
-            );
+            return Result<AgendaGeneracionRegla>.Failure(errorReferencias);
         }
 
         var diasInhabiles = regla.TipoComputo == TipoComputoPlazo.DiasHabiles
@@ -347,11 +414,8 @@ public sealed class ReglasVencimientoService : IReglasVencimientoService
             generacion,
             cancellationToken
         );
-        await _agendaRepository.GuardarCambiosAsync(cancellationToken);
 
-        return Result<AplicacionReglaVencimientoResponse>.Success(
-            MapearAplicacionResponse(generacion)
-        );
+        return Result<AgendaGeneracionRegla>.Success(generacion);
     }
 
     private async Task<bool> IncorporarContextoOrigenAsync(
@@ -593,6 +657,7 @@ public sealed class ReglasVencimientoService : IReglasVencimientoService
         return new ReglaVencimientoResponse
         {
             ReglaVencimientoId = regla.ReglaVencimientoId,
+            Codigo = regla.Codigo,
             TipoEntradaAgendaId = regla.TipoEntradaAgendaId,
             TipoEntradaNombre = regla.TipoEntrada.Nombre,
             TipoEntradaColor = regla.TipoEntrada.Color,

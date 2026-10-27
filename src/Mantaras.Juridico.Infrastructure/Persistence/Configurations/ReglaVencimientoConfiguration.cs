@@ -20,6 +20,7 @@ public sealed class ReglaVencimientoConfiguration
 
         builder.HasKey(x => x.ReglaVencimientoId);
         builder.Property(x => x.ReglaVencimientoId).ValueGeneratedOnAdd();
+        builder.Property(x => x.Codigo).HasMaxLength(50);
         builder.Property(x => x.Nombre).HasMaxLength(200).IsRequired();
         builder.Property(x => x.Descripcion).HasMaxLength(1000);
         builder.Property(x => x.TipoComputo).HasConversion<int>().IsRequired();
@@ -32,6 +33,10 @@ public sealed class ReglaVencimientoConfiguration
         builder.Property(x => x.Activo).HasDefaultValue(true).IsRequired();
 
         builder.HasIndex(x => x.Nombre).IsUnique();
+        builder
+            .HasIndex(x => x.Codigo)
+            .IsUnique()
+            .HasFilter("\"Codigo\" IS NOT NULL");
         builder.HasIndex(x => new { x.TipoEntradaAgendaId, x.Activo });
 
         builder

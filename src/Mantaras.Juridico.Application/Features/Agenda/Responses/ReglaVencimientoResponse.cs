@@ -6,6 +6,8 @@ public sealed class ReglaVencimientoResponse
 {
     public long ReglaVencimientoId { get; set; }
 
+    public string? Codigo { get; set; }
+
     public long TipoEntradaAgendaId { get; set; }
 
     public string TipoEntradaNombre { get; set; } = string.Empty;

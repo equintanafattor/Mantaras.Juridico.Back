@@ -1,6 +1,8 @@
 using Mantaras.Juridico.Application.Common.Interfaces;
 using Mantaras.Juridico.Application.Common.Pagination;
 using Mantaras.Juridico.Application.Common.Results;
+using Mantaras.Juridico.Application.Features.Agenda.Requests;
+using Mantaras.Juridico.Application.Features.Agenda.Services;
 using Mantaras.Juridico.Application.Features.Expedientes.Requests;
 using Mantaras.Juridico.Application.Features.Expedientes.Responses;
 using Mantaras.Juridico.Domain.Entities;
@@ -12,16 +14,19 @@ public sealed class ExpedientesService : IExpedientesService
 {
     private readonly IExpedienteRepository _expedienteRepository;
     private readonly ICasoRepository _casoRepository;
+    private readonly IReglasVencimientoService _reglasVencimientoService;
     private readonly ICurrentUserService _currentUser;
 
     public ExpedientesService(
         IExpedienteRepository expedienteRepository,
         ICasoRepository casoRepository,
+        IReglasVencimientoService reglasVencimientoService,
         ICurrentUserService currentUser
     )
     {
         _expedienteRepository = expedienteRepository;
         _casoRepository = casoRepository;
+        _reglasVencimientoService = reglasVencimientoService;
         _currentUser = currentUser;
     }
 
@@ -265,9 +270,66 @@ public sealed class ExpedientesService : IExpedientesService
             relacion.Caso = solicitados[relacion.CasoId];
         }
 
+        var errorEnvioCobro = await RegistrarEnvioCobroAsync(
+            expediente,
+            request.EnvioCobro,
+            cancellationToken
+        );
+
+        if (errorEnvioCobro is not null)
+        {
+            return Result<ExpedienteResponse>.Failure(errorEnvioCobro);
+        }
+
         await _expedienteRepository.GuardarCambiosAsync(cancellationToken);
 
         return Result<ExpedienteResponse>.Success(MapearResponse(expediente));
+    }
+
+    public async Task<PagedResponse<ExpedienteCobroResponse>> BuscarCobroAsync(
+        BuscarExpedientesCobroRequest request,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var fechaActual = ObtenerFechaActual();
+        var expedientes = await _expedienteRepository.BuscarCobroAsync(
+            request.Busqueda,
+            request.SoloActivos,
+            request.SeguimientoVencido,
+            fechaActual,
+            request.Page,
+            request.PageSize,
+            cancellationToken
+        );
+
+        var totalItems = await _expedienteRepository.ContarCobroAsync(
+            request.Busqueda,
+            request.SoloActivos,
+            request.SeguimientoVencido,
+            fechaActual,
+            cancellationToken
+        );
+
+        return new PagedResponse<ExpedienteCobroResponse>
+        {
+            Items = expedientes
+                .Select(expediente => new ExpedienteCobroResponse
+                {
+                    ExpedienteId = expediente.ExpedienteId,
+                    Casos = MapearCasos(expediente),
+                    TipoExpediente = expediente.TipoExpediente,
+                    NumeroExpediente = expediente.NumeroExpediente,
+                    Caratula = expediente.Caratula,
+                    Juzgado = expediente.Juzgado,
+                    EstadoLegal = expediente.EstadoLegal,
+                    Activo = expediente.Activo,
+                    EnvioCobro = MapearEnvioCobro(expediente, fechaActual)!,
+                })
+                .ToArray(),
+            Page = request.Page,
+            PageSize = request.PageSize,
+            TotalItems = totalItems,
+        };
     }
 
     public async Task<Result<bool>> DarDeBajaAsync(
@@ -367,6 +429,130 @@ public sealed class ExpedientesService : IExpedientesService
         return Result<bool>.Success(true);
     }
 
+    private async Task<Error?> RegistrarEnvioCobroAsync(
+        Expediente expediente,
+        RegistrarEnvioCobroRequest? solicitud,
+        CancellationToken cancellationToken
+    )
+    {
+        if (solicitud is null)
+        {
+            return null;
+        }
+
+        var envioActivo = expediente.EnviosCobro.SingleOrDefault(x => x.Activo);
+
+        if (envioActivo is not null)
+        {
+            return envioActivo.TipoDocumento == solicitud.TipoDocumento
+                && envioActivo.FechaEnvio == solicitud.FechaEnvio
+                    ? null
+                    : ExpedienteErrors.EnvioCobroYaRegistrado;
+        }
+
+        if (!expediente.Activo)
+        {
+            return ExpedienteErrors.EnvioCobroExpedienteInactivo;
+        }
+
+        var generacionResult = await _reglasVencimientoService
+            .PrepararAplicacionPorCodigoAsync(
+                ReglaVencimiento.CodigoSeguimientoCobroJudicial,
+                new AplicarReglaVencimientoRequest
+                {
+                    FechaBase = solicitud.FechaEnvio,
+                    OrigenFechaBase = OrigenFechaBaseAgenda.ExpedienteJudicial,
+                    ExpedienteOrigenId = expediente.ExpedienteId,
+                    ClaveIdempotencia = ConstruirClaveSeguimientoCobro(
+                        expediente.ExpedienteId,
+                        solicitud
+                    ),
+                    CasoIds = expediente.Casos.Select(x => x.CasoId).ToArray(),
+                },
+                cancellationToken
+            );
+
+        if (generacionResult.IsFailure)
+        {
+            return generacionResult.Errors.First();
+        }
+
+        var generacion = generacionResult.Value!;
+
+        // Una generación ya persistida con la misma clave pertenece a un envío anterior.
+        if (generacion.AgendaGeneracionReglaId != 0)
+        {
+            return ExpedienteErrors.SeguimientoCobroYaGenerado;
+        }
+
+        expediente.EnviosCobro.Add(
+            new EnvioCobroExpediente
+            {
+                ExpedienteId = expediente.ExpedienteId,
+                Expediente = expediente,
+                TipoDocumento = solicitud.TipoDocumento,
+                FechaEnvio = solicitud.FechaEnvio,
+                AgendaGeneracionRegla = generacion,
+                FechaCreacion = DateTime.UtcNow,
+                UsuarioCreacion = _currentUser.Usuario,
+                Activo = true,
+            }
+        );
+
+        return null;
+    }
+
+    private static string ConstruirClaveSeguimientoCobro(
+        long expedienteId,
+        RegistrarEnvioCobroRequest solicitud
+    ) =>
+        $"cobro-judicial:{expedienteId}:{(int)solicitud.TipoDocumento}:{solicitud.FechaEnvio:yyyy-MM-dd}";
+
+    private static DateOnly ObtenerFechaActual()
+    {
+        return DateOnly.FromDateTime(
+            TimeZoneInfo.ConvertTimeFromUtc(
+                DateTime.UtcNow,
+                TimeZoneInfo.FindSystemTimeZoneById(
+                    EntradaAgenda.ZonaHorariaPredeterminada
+                )
+            )
+        );
+    }
+
+    private static EnvioCobroResponse? MapearEnvioCobro(
+        Expediente expediente,
+        DateOnly fechaActual
+    )
+    {
+        var envio = expediente.EnviosCobro.SingleOrDefault(x => x.Activo);
+
+        if (envio is null)
+        {
+            return null;
+        }
+
+        var generacion = envio.AgendaGeneracionRegla;
+        var fechaSeguimiento = generacion.EntradaAgenda.FechaVencimiento!.Value;
+        var diasParaSeguimiento = fechaSeguimiento.DayNumber - fechaActual.DayNumber;
+
+        return new EnvioCobroResponse
+        {
+            EnvioCobroExpedienteId = envio.EnvioCobroExpedienteId,
+            TipoDocumento = envio.TipoDocumento,
+            FechaEnvio = envio.FechaEnvio,
+            AgendaGeneracionReglaId = generacion.AgendaGeneracionReglaId,
+            ReglaVencimientoId = generacion.ReglaVencimientoId,
+            EntradaAgendaId = generacion.EntradaAgendaId,
+            FechaSeguimiento = fechaSeguimiento,
+            EstadoSeguimiento = generacion.EntradaAgenda.Estado,
+            DiasParaSeguimiento = diasParaSeguimiento,
+            SeguimientoVencido = diasParaSeguimiento < 0,
+            FechaRegistro = envio.FechaCreacion,
+            UsuarioRegistro = envio.UsuarioCreacion,
+        };
+    }
+
     private async Task<(Expediente? Padre, Error? Error)> ResolverPadreAsync(
         long? expedientePadreId,
         long? expedienteId,
@@ -446,6 +632,7 @@ public sealed class ExpedientesService : IExpedientesService
             FechaInicio = expediente.FechaInicio,
             EstadoLegal = expediente.EstadoLegal,
             TipoTramite = expediente.TipoTramite,
+            EnvioCobro = MapearEnvioCobro(expediente, ObtenerFechaActual()),
             ExpedientePadre = expediente.ExpedientePadre is null
                 ? null
                 : MapearRelacionado(expediente.ExpedientePadre),
@@ -474,6 +661,7 @@ public sealed class ExpedientesService : IExpedientesService
             FechaInicio = expediente.FechaInicio,
             EstadoLegal = expediente.EstadoLegal,
             TipoTramite = expediente.TipoTramite,
+            EnvioCobro = MapearEnvioCobro(expediente, ObtenerFechaActual()),
             FechaCreacion = expediente.FechaCreacion,
             FechaModificacion = expediente.FechaModificacion,
             Activo = expediente.Activo,

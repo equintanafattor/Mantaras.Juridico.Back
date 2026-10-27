@@ -518,6 +518,57 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                     b.ToTable("EntradasAgendaResponsables", (string)null);
                 });
 
+            modelBuilder.Entity("Mantaras.Juridico.Domain.Entities.EnvioCobroExpediente", b =>
+                {
+                    b.Property<long>("EnvioCobroExpedienteId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("EnvioCobroExpedienteId"));
+
+                    b.Property<bool>("Activo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<long>("AgendaGeneracionReglaId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ExpedienteId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("FechaEnvio")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("TipoDocumento")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UsuarioCreacion")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("UsuarioModificacion")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("EnvioCobroExpedienteId");
+
+                    b.HasIndex("AgendaGeneracionReglaId")
+                        .IsUnique();
+
+                    b.HasIndex("ExpedienteId")
+                        .IsUnique()
+                        .HasFilter("\"Activo\"");
+
+                    b.ToTable("EnviosCobroExpedientes", (string)null);
+                });
+
             modelBuilder.Entity("Mantaras.Juridico.Domain.Entities.Expediente", b =>
                 {
                     b.Property<long>("ExpedienteId")
@@ -1047,6 +1098,10 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                     b.Property<int>("CantidadDias")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Codigo")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<string>("Descripcion")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -1086,6 +1141,10 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(100)");
 
                     b.HasKey("ReglaVencimientoId");
+
+                    b.HasIndex("Codigo")
+                        .IsUnique()
+                        .HasFilter("\"Codigo\" IS NOT NULL");
 
                     b.HasIndex("Nombre")
                         .IsUnique();
@@ -1743,6 +1802,25 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                     b.Navigation("EntradaAgenda");
                 });
 
+            modelBuilder.Entity("Mantaras.Juridico.Domain.Entities.EnvioCobroExpediente", b =>
+                {
+                    b.HasOne("Mantaras.Juridico.Domain.Entities.AgendaGeneracionRegla", "AgendaGeneracionRegla")
+                        .WithOne()
+                        .HasForeignKey("Mantaras.Juridico.Domain.Entities.EnvioCobroExpediente", "AgendaGeneracionReglaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Mantaras.Juridico.Domain.Entities.Expediente", "Expediente")
+                        .WithMany("EnviosCobro")
+                        .HasForeignKey("ExpedienteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AgendaGeneracionRegla");
+
+                    b.Navigation("Expediente");
+                });
+
             modelBuilder.Entity("Mantaras.Juridico.Domain.Entities.Expediente", b =>
                 {
                     b.HasOne("Mantaras.Juridico.Domain.Entities.Expediente", "ExpedientePadre")
@@ -1949,6 +2027,8 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Mantaras.Juridico.Domain.Entities.Expediente", b =>
                 {
                     b.Navigation("Casos");
+
+                    b.Navigation("EnviosCobro");
 
                     b.Navigation("ExpedientesDerivados");
 

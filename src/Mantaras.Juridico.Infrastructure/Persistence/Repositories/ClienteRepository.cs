@@ -30,7 +30,7 @@ public class ClienteRepository : IClienteRepository
     )
     {
         return _dbContext
-            .Clientes.AsNoTracking()
+            .Clientes.AsNoTrackingWithIdentityResolution()
             .AsSplitQuery()
             .Include(cliente => cliente.Casos)
                 .ThenInclude(casoCliente => casoCliente.Caso)
@@ -42,6 +42,10 @@ public class ClienteRepository : IClienteRepository
             .Include(cliente => cliente.Casos)
                 .ThenInclude(casoCliente => casoCliente.Caso)
                     .ThenInclude(caso => caso.TipoExpedienteAdministrativo)
+            .Include(cliente => cliente.Casos)
+                .ThenInclude(casoCliente => casoCliente.Caso)
+                    .ThenInclude(caso => caso.Clientes.Where(participante => participante.EsPrincipal))
+                        .ThenInclude(participante => participante.Cliente)
             .FirstOrDefaultAsync(cliente => cliente.ClienteId == clienteId, cancellationToken);
     }
 

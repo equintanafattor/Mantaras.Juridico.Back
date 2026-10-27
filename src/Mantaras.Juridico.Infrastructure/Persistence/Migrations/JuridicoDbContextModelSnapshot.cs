@@ -235,6 +235,10 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("Celular")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<string>("ClaveSeguridadSocial")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -561,6 +565,10 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(1);
 
+                    b.Property<string>("TipoTramite")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<string>("UsuarioCreacion")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -582,6 +590,9 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                 {
                     b.Property<long>("CasoId")
                         .HasColumnType("bigint");
+
+                    b.Property<DateOnly?>("FechaAdquisicionDerecho")
+                        .HasColumnType("date");
 
                     b.Property<DateTime>("FechaCreacion")
                         .HasColumnType("timestamp with time zone");
@@ -605,6 +616,10 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<string>("LeyAplicada")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<int?>("MovilidadActualizacionAnio")
                         .HasColumnType("integer");
 
@@ -618,6 +633,10 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                     b.Property<string>("MovilidadObservaciones")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("ObservacionesGenerales")
+                        .HasMaxLength(6500)
+                        .HasColumnType("character varying(6500)");
 
                     b.Property<DateOnly?>("RetroactivoFechaActualizacion")
                         .HasColumnType("date");
@@ -672,6 +691,9 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("FechaCreacion")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateOnly?>("FechaMovimiento")
+                        .HasColumnType("date");
+
                     b.Property<string>("Texto")
                         .IsRequired()
                         .HasMaxLength(2000)
@@ -688,6 +710,10 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                     b.HasIndex("ClienteId", "FechaCreacion");
 
                     b.HasIndex("ExpedienteId", "FechaCreacion");
+
+                    b.HasIndex("CasoId", "FechaMovimiento", "FechaCreacion");
+
+                    b.HasIndex("ExpedienteId", "FechaMovimiento", "FechaCreacion");
 
                     b.ToTable("Observaciones", null, t =>
                         {

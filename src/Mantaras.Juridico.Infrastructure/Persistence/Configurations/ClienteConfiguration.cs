@@ -32,6 +32,8 @@ public class ClienteConfiguration : IEntityTypeConfiguration<Cliente>
 
         builder.Property(x => x.Telefono).HasMaxLength(50);
 
+        builder.Property(x => x.Celular).HasMaxLength(50);
+
         builder.Property(x => x.Email).HasMaxLength(200);
 
         builder.Property(x => x.Domicilio).HasMaxLength(300);

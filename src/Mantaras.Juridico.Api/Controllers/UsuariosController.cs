@@ -83,6 +83,65 @@ public sealed class UsuariosController : ControllerBase
         );
     }
 
+    [HttpPut("{usuarioId:long}")]
+    [ProducesResponseType(
+        typeof(UsuarioResponse),
+        StatusCodes.Status200OK
+    )]
+    [ProducesResponseType(
+        typeof(ApiErrorResponse),
+        StatusCodes.Status400BadRequest
+    )]
+    [ProducesResponseType(
+        typeof(ApiErrorResponse),
+        StatusCodes.Status404NotFound
+    )]
+    [ProducesResponseType(
+        typeof(ApiErrorResponse),
+        StatusCodes.Status409Conflict
+    )]
+    public async Task<ActionResult<UsuarioResponse>> Actualizar(
+        long usuarioId,
+        [FromBody] ActualizarUsuarioRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        var result = await _usuariosService.ActualizarAsync(
+            usuarioId,
+            request,
+            cancellationToken
+        );
+
+        if (result.IsFailure)
+        {
+            var errorResponse = CrearErrorResponse(result.Errors);
+
+            if (ContieneError(
+                result.Errors,
+                UsuarioErrors.NoEncontrado
+            ))
+            {
+                return NotFound(errorResponse);
+            }
+
+            if (ContieneError(
+                    result.Errors,
+                    UsuarioErrors.EmailDuplicado
+                )
+                || ContieneError(
+                    result.Errors,
+                    UsuarioErrors.UltimoAdministradorRol
+                ))
+            {
+                return Conflict(errorResponse);
+            }
+
+            return BadRequest(errorResponse);
+        }
+
+        return Ok(result.Value);
+    }
+
     [HttpDelete("{usuarioId:long}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(

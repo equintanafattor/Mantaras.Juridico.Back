@@ -12,6 +12,8 @@ public sealed class Observacion
 
     public long? ExpedienteId { get; set; }
 
+    public DateOnly? FechaMovimiento { get; set; }
+
     public DateTime FechaCreacion { get; set; }
 
     public string? UsuarioCreacion { get; set; }

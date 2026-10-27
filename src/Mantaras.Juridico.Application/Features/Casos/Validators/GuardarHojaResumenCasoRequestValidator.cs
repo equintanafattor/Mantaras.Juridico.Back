@@ -8,6 +8,20 @@ public sealed class GuardarHojaResumenCasoRequestValidator
 {
     public GuardarHojaResumenCasoRequestValidator()
     {
+        RuleFor(x => x.LeyAplicada)
+            .MaximumLength(200)
+            .WithMessage("La ley aplicada no puede superar los 200 caracteres.");
+
+        RuleFor(x => x.ObservacionesGenerales)
+            .MaximumLength(6500)
+            .WithMessage("Las observaciones generales no pueden superar los 6500 caracteres.");
+
+        RuleFor(x => x.RetroactivoFechaInicio)
+            .Must((request, inicio) =>
+                !inicio.HasValue || !request.RetroactivoFechaActualizacion.HasValue
+                || inicio.Value <= request.RetroactivoFechaActualizacion.Value)
+            .WithMessage("El inicio del período retroactivo no puede ser posterior a su fin.");
+
         RuleFor(x => x.HaberInicialReajustadoCaracteristicas)
             .MaximumLength(2000)
             .WithMessage(

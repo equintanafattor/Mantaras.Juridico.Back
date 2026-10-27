@@ -8,6 +8,10 @@ public sealed class CrearObservacionRequestValidator
 {
     public CrearObservacionRequestValidator()
     {
+        RuleFor(request => request.FechaMovimiento)
+            .Must(fecha => !fecha.HasValue || fecha.Value != default)
+            .WithMessage("La fecha del movimiento no es válida.");
+
         RuleFor(request => request.Texto)
             .Cascade(CascadeMode.Stop)
             .NotEmpty()

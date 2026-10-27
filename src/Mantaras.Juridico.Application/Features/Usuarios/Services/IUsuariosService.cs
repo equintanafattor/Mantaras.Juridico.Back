@@ -15,6 +15,12 @@ public interface IUsuariosService
         CancellationToken cancellationToken = default
     );
 
+    Task<Result<UsuarioResponse>> ActualizarAsync(
+        long usuarioId,
+        ActualizarUsuarioRequest request,
+        CancellationToken cancellationToken = default
+    );
+
     Task<Result<bool>> DarDeBajaAsync(
         long usuarioId,
         CancellationToken cancellationToken = default

@@ -23,6 +23,8 @@ public sealed class ExpedienteDetalleResponse
 
     public string? EstadoLegal { get; set; }
 
+    public string? TipoTramite { get; set; }
+
     public ExpedienteRelacionadoResponse? ExpedientePadre { get; set; }
 
     public IReadOnlyCollection<ExpedienteRelacionadoResponse> ExpedientesDerivados { get; set; } =

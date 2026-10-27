@@ -50,6 +50,10 @@ public sealed class ActualizarClienteRequestValidator : AbstractValidator<Actual
             .MaximumLength(50)
             .WithMessage("El teléfono no puede superar los 50 caracteres.");
 
+        RuleFor(x => x.Celular)
+            .MaximumLength(50)
+            .WithMessage("El celular no puede superar los 50 caracteres.");
+
         RuleFor(x => x.Email)
             .MaximumLength(200)
             .WithMessage("El email no puede superar los 200 caracteres.")

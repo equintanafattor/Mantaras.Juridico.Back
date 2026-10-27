@@ -2,6 +2,12 @@ namespace Mantaras.Juridico.Application.Features.Casos.Requests;
 
 public sealed record GuardarHojaResumenCasoRequest
 {
+    public DateOnly? FechaAdquisicionDerecho { get; init; }
+
+    public string? LeyAplicada { get; init; }
+
+    public string? ObservacionesGenerales { get; init; }
+
     public bool? TieneCalculoPrevio { get; init; }
 
     public string? HaberInicialReajustadoCaracteristicas { get; init; }

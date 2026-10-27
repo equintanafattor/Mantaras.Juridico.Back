@@ -84,6 +84,8 @@ public sealed class HojaResumenCasoService : IHojaResumenCasoService
 
         var datos = request with
         {
+            LeyAplicada = Normalizar(request.LeyAplicada),
+            ObservacionesGenerales = Normalizar(request.ObservacionesGenerales),
             HaberInicialReajustadoCaracteristicas =
                 Normalizar(request.HaberInicialReajustadoCaracteristicas),
             HaberInicialObservacion =
@@ -124,6 +126,9 @@ public sealed class HojaResumenCasoService : IHojaResumenCasoService
             hoja.UsuarioModificacion = _currentUser.Usuario;
         }
 
+        hoja.FechaAdquisicionDerecho = datos.FechaAdquisicionDerecho;
+        hoja.LeyAplicada = datos.LeyAplicada;
+        hoja.ObservacionesGenerales = datos.ObservacionesGenerales;
         hoja.TieneCalculoPrevio = datos.TieneCalculoPrevio;
 
         hoja.HaberInicialReajustadoCaracteristicas =
@@ -171,7 +176,10 @@ public sealed class HojaResumenCasoService : IHojaResumenCasoService
         GuardarHojaResumenCasoRequest datos
     )
     {
-        return hoja.TieneCalculoPrevio == datos.TieneCalculoPrevio
+        return hoja.FechaAdquisicionDerecho == datos.FechaAdquisicionDerecho
+            && hoja.LeyAplicada == datos.LeyAplicada
+            && hoja.ObservacionesGenerales == datos.ObservacionesGenerales
+            && hoja.TieneCalculoPrevio == datos.TieneCalculoPrevio
             && hoja.HaberInicialReajustadoCaracteristicas
                 == datos.HaberInicialReajustadoCaracteristicas
             && hoja.HaberInicialPbu == datos.HaberInicialPbu
@@ -196,6 +204,9 @@ public sealed class HojaResumenCasoService : IHojaResumenCasoService
         {
             CasoId = casoId,
             Registrada = hoja is not null,
+            FechaAdquisicionDerecho = hoja?.FechaAdquisicionDerecho,
+            LeyAplicada = hoja?.LeyAplicada,
+            ObservacionesGenerales = hoja?.ObservacionesGenerales,
             TieneCalculoPrevio = hoja?.TieneCalculoPrevio,
             HaberInicialReajustadoCaracteristicas =
                 hoja?.HaberInicialReajustadoCaracteristicas,

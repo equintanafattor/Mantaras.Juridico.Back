@@ -32,6 +32,10 @@ public sealed class CasoClienteDetalleResponse
 
     public bool EsPrincipal { get; set; }
 
+    public long? ClientePrincipalId { get; set; }
+
+    public string? ClientePrincipalNombre { get; set; }
+
     public bool Activo { get; set; }
 
     public IReadOnlyCollection<ExpedienteClienteDetalleResponse> Expedientes { get; set; } =

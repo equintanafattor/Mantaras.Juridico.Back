@@ -262,10 +262,12 @@ Conexión efectiva confirmada: la base de prueba quedó con 21 migraciones aplic
 - Scripts existentes del repo, contra la misma API: `Probar-CasosAdministrativos` (414), `Probar-HojaResumenCaso` (313), `Probar-Catalogos` (78) y `Probar-Familiares` (627). Todos OK.
 - En el log de la API, los únicos `fail:` son registros de EF de las violaciones de unicidad que el código captura y resuelve. No hubo errores no controlados.
 
+- Integración con el front (`feat/agenda-entregable-2`, commit `acf708c`), probada en el navegador por la sesión de frontend contra esta API: Chrome de escritorio y Pixel 7. Cubrió altas, cambios de estado, registro de envío de cobro, `ReglaDeSistema`, el filtro `seguimientoVencido` y los contadores del panel. No se encontraron errores de backend.
+- Durante esa prueba, el log registró 42 errores no controlados. Eran todos `OperationCanceledException`: consultas que el navegador canceló al navegar. Ahora no se registran como error ni se intenta responder un 500. Se verificó cortando solicitudes a propósito (0 errores) y volviendo a correr el script end-to-end (78/78).
+
 Límites:
 
 - Solo local, con datos sintéticos. No se validó en staging ni en producción, ni con el calendario real de inhábiles.
-- No se probó el circuito completo con el frontend en el navegador. Queda para coordinar con front usando el usuario de prueba.
 - La concurrencia se probó con 8 solicitudes en paralelo contra una sola instancia de la API.
 
 ---
@@ -273,6 +275,6 @@ Límites:
 ## 7. Rama, commits y push
 
 - Rama: `feat/agenda-entregable-2`, al día con `origin/feat/agenda-entregable-2` y `origin/main` (sin conflictos).
-- Commit: ver `git log` (un commit con estos cambios, sobre `c16914e`).
-- Push: ver el estado informado al entregar.
+- Commits: `73fce85` (cambios de API y este brief) y el siguiente (cancelaciones del cliente en el middleware y resultados de la integración).
+- Push: publicado en `origin/feat/agenda-entregable-2`. `main` no se publicó.
 - No se integró en `main` ni se desplegó.

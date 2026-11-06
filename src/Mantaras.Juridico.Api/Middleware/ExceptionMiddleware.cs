@@ -28,6 +28,12 @@ public class ExceptionMiddleware
         {
             await _next(context);
         }
+        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+        {
+            // El cliente cortó la solicitud (navegación o consulta cancelada en el front).
+            // No es un error del servidor y ya no hay a quién responder.
+            _logger.LogDebug("Solicitud cancelada por el cliente: {Path}", context.Request.Path);
+        }
         catch (BusinessException exception)
         {
             await EscribirRespuestaAsync(

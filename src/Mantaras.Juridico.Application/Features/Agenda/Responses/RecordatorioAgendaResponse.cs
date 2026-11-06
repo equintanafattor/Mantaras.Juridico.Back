@@ -14,6 +14,9 @@ public sealed class RecordatorioAgendaResponse
 
     public string? TipoEntradaColor { get; set; }
 
+    // Estado de trabajo de la entrada. El estado del aviso no cambia al cerrar la entrada.
+    public EstadoEntradaAgenda EntradaEstado { get; set; }
+
     public CanalRecordatorioAgenda Canal { get; set; }
 
     public DateTime FechaProgramadaUtc { get; set; }

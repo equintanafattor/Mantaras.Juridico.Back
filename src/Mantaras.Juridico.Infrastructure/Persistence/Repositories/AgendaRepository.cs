@@ -1,4 +1,6 @@
 using Mantaras.Juridico.Application.Common.Interfaces;
+using Mantaras.Juridico.Application.Features.Agenda;
+using Mantaras.Juridico.Application.Features.Agenda.Requests;
 using Mantaras.Juridico.Application.Features.Agenda.Responses;
 using Mantaras.Juridico.Domain.Entities;
 using Mantaras.Juridico.Domain.Enums;
@@ -38,9 +40,13 @@ public sealed class AgendaRepository : IAgendaRepository
             .EntradasAgenda
             .Include(x => x.TipoEntrada)
             .Include(x => x.Clientes)
+                .ThenInclude(x => x.Cliente)
             .Include(x => x.Casos)
+                .ThenInclude(x => x.Caso)
             .Include(x => x.Expedientes)
+                .ThenInclude(x => x.Expediente)
             .Include(x => x.Responsables)
+            .AsSplitQuery()
             .AsQueryable();
 
         if (!seguimiento)
@@ -116,35 +122,11 @@ public sealed class AgendaRepository : IAgendaRepository
     }
 
     public async Task<IReadOnlyCollection<EntradaAgenda>> BuscarAsync(
-        DateOnly? desde,
-        DateOnly? hasta,
-        long? tipoEntradaAgendaId,
-        EstadoEntradaAgenda? estado,
-        long? responsableId,
-        long? clienteId,
-        long? casoId,
-        long? expedienteId,
-        string? busqueda,
-        bool incluirVencimientos,
-        bool soloActivos,
-        int page,
-        int pageSize,
+        BuscarAgendaRequest filtro,
         CancellationToken cancellationToken = default
     )
     {
-        return await ConstruirConsulta(
-                desde,
-                hasta,
-                tipoEntradaAgendaId,
-                estado,
-                responsableId,
-                clienteId,
-                casoId,
-                expedienteId,
-                busqueda,
-                incluirVencimientos,
-                soloActivos
-            )
+        var query = ConstruirConsulta(filtro)
             .Include(x => x.TipoEntrada)
             .Include(x => x.Clientes)
                 .ThenInclude(x => x.Cliente)
@@ -152,45 +134,35 @@ public sealed class AgendaRepository : IAgendaRepository
                 .ThenInclude(x => x.Caso)
             .Include(x => x.Expedientes)
                 .ThenInclude(x => x.Expediente)
-            .Include(x => x.Responsables)
-            .OrderBy(x => x.FechaInicio)
-            .ThenBy(x => x.HoraInicio)
-            .ThenBy(x => x.EntradaAgendaId)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+            .Include(x => x.Responsables);
+
+        var ordenada = filtro.Orden == OrdenAgenda.Referencia
+            ? query
+                .OrderBy(x => x.FechaVencimiento ?? x.FechaFin ?? x.FechaInicio)
+                .ThenBy(x => x.FechaVencimiento.HasValue
+                    ? x.HoraVencimiento
+                    : x.FechaFin.HasValue ? x.HoraFin : x.HoraInicio)
+                .ThenByDescending(x => x.Prioridad)
+                .ThenBy(x => x.EntradaAgendaId)
+            : query
+                .OrderBy(x => x.FechaInicio)
+                .ThenBy(x => x.HoraInicio)
+                .ThenBy(x => x.EntradaAgendaId);
+
+        return await ordenada
+            .Skip((filtro.Page - 1) * filtro.PageSize)
+            .Take(filtro.PageSize)
             .AsSplitQuery()
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
 
     public Task<int> ContarAsync(
-        DateOnly? desde,
-        DateOnly? hasta,
-        long? tipoEntradaAgendaId,
-        EstadoEntradaAgenda? estado,
-        long? responsableId,
-        long? clienteId,
-        long? casoId,
-        long? expedienteId,
-        string? busqueda,
-        bool incluirVencimientos,
-        bool soloActivos,
+        BuscarAgendaRequest filtro,
         CancellationToken cancellationToken = default
     )
     {
-        return ConstruirConsulta(
-            desde,
-            hasta,
-            tipoEntradaAgendaId,
-            estado,
-            responsableId,
-            clienteId,
-            casoId,
-            expedienteId,
-            busqueda,
-            incluirVencimientos,
-            soloActivos
-        ).CountAsync(cancellationToken);
+        return ConstruirConsulta(filtro).CountAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyDictionary<long, string>> ObtenerNombresUsuariosAsync(
@@ -371,7 +343,12 @@ public sealed class AgendaRepository : IAgendaRepository
         CancellationToken cancellationToken = default
     )
     {
-        return _dbContext.SaveChangesAsync(cancellationToken);
+        return ViolacionUnicidad.GuardarAsync(_dbContext, cancellationToken);
+    }
+
+    public void DescartarCambios()
+    {
+        _dbContext.ChangeTracker.Clear();
     }
 
     private static async Task<bool> CoincidenTodosAsync(
@@ -394,20 +371,20 @@ public sealed class AgendaRepository : IAgendaRepository
         return cantidad == unicos.Length;
     }
 
-    private IQueryable<EntradaAgenda> ConstruirConsulta(
-        DateOnly? desde,
-        DateOnly? hasta,
-        long? tipoEntradaAgendaId,
-        EstadoEntradaAgenda? estado,
-        long? responsableId,
-        long? clienteId,
-        long? casoId,
-        long? expedienteId,
-        string? busqueda,
-        bool incluirVencimientos,
-        bool soloActivos
-    )
+    private IQueryable<EntradaAgenda> ConstruirConsulta(BuscarAgendaRequest filtro)
     {
+        var desde = filtro.Desde;
+        var hasta = filtro.Hasta;
+        var tipoEntradaAgendaId = filtro.TipoEntradaAgendaId;
+        var estado = filtro.Estado;
+        var responsableId = filtro.ResponsableId;
+        var clienteId = filtro.ClienteId;
+        var casoId = filtro.CasoId;
+        var expedienteId = filtro.ExpedienteId;
+        var busqueda = filtro.Busqueda;
+        var incluirVencimientos = filtro.IncluirVencimientos;
+        var soloActivos = filtro.SoloActivos;
+
         var query = _dbContext.EntradasAgenda.AsQueryable();
 
         if (soloActivos)
@@ -448,6 +425,11 @@ public sealed class AgendaRepository : IAgendaRepository
         if (estado.HasValue)
         {
             query = query.Where(x => x.Estado == estado.Value);
+        }
+
+        if (filtro.SoloAbiertas)
+        {
+            query = query.Where(CriteriosAgenda.Abierta());
         }
 
         if (responsableId.HasValue)

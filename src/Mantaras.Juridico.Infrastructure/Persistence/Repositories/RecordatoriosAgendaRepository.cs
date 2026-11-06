@@ -59,12 +59,13 @@ public sealed class RecordatoriosAgendaRepository
     public async Task<IReadOnlyCollection<RecordatorioAgenda>> BuscarAsync(
         long? entradaAgendaId,
         EstadoRecordatorioAgenda? estado,
+        bool soloEntradasAbiertas,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default
     )
     {
-        return await ConstruirConsulta(entradaAgendaId, estado)
+        return await ConstruirConsulta(entradaAgendaId, estado, soloEntradasAbiertas)
             .Include(x => x.EntradaAgenda)
                 .ThenInclude(x => x.TipoEntrada)
             .OrderBy(x => x.Atendido)
@@ -79,10 +80,11 @@ public sealed class RecordatoriosAgendaRepository
     public Task<int> ContarAsync(
         long? entradaAgendaId,
         EstadoRecordatorioAgenda? estado,
+        bool soloEntradasAbiertas,
         CancellationToken cancellationToken = default
     )
     {
-        return ConstruirConsulta(entradaAgendaId, estado)
+        return ConstruirConsulta(entradaAgendaId, estado, soloEntradasAbiertas)
             .CountAsync(cancellationToken);
     }
 
@@ -106,7 +108,8 @@ public sealed class RecordatoriosAgendaRepository
 
     private IQueryable<RecordatorioAgenda> ConstruirConsulta(
         long? entradaAgendaId,
-        EstadoRecordatorioAgenda? estado
+        EstadoRecordatorioAgenda? estado,
+        bool soloEntradasAbiertas
     )
     {
         var ahora = DateTime.UtcNow;
@@ -117,6 +120,14 @@ public sealed class RecordatoriosAgendaRepository
         {
             query = query.Where(x =>
                 x.EntradaAgendaId == entradaAgendaId.Value
+            );
+        }
+
+        if (soloEntradasAbiertas)
+        {
+            query = query.Where(x =>
+                x.EntradaAgenda.Estado != EstadoEntradaAgenda.Completada
+                && x.EntradaAgenda.Estado != EstadoEntradaAgenda.Cancelada
             );
         }
 

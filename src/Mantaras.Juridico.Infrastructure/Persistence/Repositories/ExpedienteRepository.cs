@@ -194,7 +194,12 @@ public sealed class ExpedienteRepository : IExpedienteRepository
         CancellationToken cancellationToken = default
     )
     {
-        return _dbContext.SaveChangesAsync(cancellationToken);
+        return ViolacionUnicidad.GuardarAsync(_dbContext, cancellationToken);
+    }
+
+    public void DescartarCambios()
+    {
+        _dbContext.ChangeTracker.Clear();
     }
 
     private IQueryable<Expediente> ConstruirConsultaCobro(
@@ -208,15 +213,23 @@ public sealed class ExpedienteRepository : IExpedienteRepository
 
         return seguimientoVencido switch
         {
+            // Mismo criterio que Agenda: vencido = entrada abierta con fecha pasada.
             true => query.Where(x => x.EnviosCobro.Any(envio =>
                 envio.Activo
+                && envio.AgendaGeneracionRegla.EntradaAgenda.Estado != EstadoEntradaAgenda.Completada
+                && envio.AgendaGeneracionRegla.EntradaAgenda.Estado != EstadoEntradaAgenda.Cancelada
                 && envio.AgendaGeneracionRegla.EntradaAgenda.FechaVencimiento
                     < fechaActual
             )),
+            // No vencidos: abiertos sin vencer y también los cerrados.
             false => query.Where(x => x.EnviosCobro.Any(envio =>
                 envio.Activo
-                && envio.AgendaGeneracionRegla.EntradaAgenda.FechaVencimiento
-                    >= fechaActual
+                && (
+                    envio.AgendaGeneracionRegla.EntradaAgenda.Estado == EstadoEntradaAgenda.Completada
+                    || envio.AgendaGeneracionRegla.EntradaAgenda.Estado == EstadoEntradaAgenda.Cancelada
+                    || envio.AgendaGeneracionRegla.EntradaAgenda.FechaVencimiento
+                        >= fechaActual
+                )
             )),
             null => query.Where(x => x.EnviosCobro.Any(envio => envio.Activo)),
         };

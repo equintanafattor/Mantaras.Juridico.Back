@@ -26,4 +26,18 @@ public sealed class BuscarAgendaRequest : PagedRequest
     public bool IncluirVencimientos { get; set; }
 
     public bool SoloActivos { get; set; } = true;
+
+    // true: solo Pendiente, EnCurso y Pospuesta. Se combina con Estado si se informa.
+    public bool SoloAbiertas { get; set; }
+
+    public OrdenAgenda Orden { get; set; } = OrdenAgenda.Inicio;
+}
+
+public enum OrdenAgenda
+{
+    // FechaInicio, HoraInicio, id (comportamiento original).
+    Inicio = 1,
+
+    // FechaVencimiento ?? FechaFin ?? FechaInicio, su hora, prioridad (Urgente primero), id.
+    Referencia = 2,
 }

@@ -1,6 +1,8 @@
+using Mantaras.Juridico.Application.Common.Exceptions;
 using Mantaras.Juridico.Application.Common.Interfaces;
 using Mantaras.Juridico.Application.Common.Pagination;
 using Mantaras.Juridico.Application.Common.Results;
+using Mantaras.Juridico.Application.Features.Agenda;
 using Mantaras.Juridico.Application.Features.Agenda.Requests;
 using Mantaras.Juridico.Application.Features.Agenda.Services;
 using Mantaras.Juridico.Application.Features.Expedientes.Requests;
@@ -165,6 +167,28 @@ public sealed class ExpedientesService : IExpedientesService
         CancellationToken cancellationToken = default
     )
     {
+        try
+        {
+            return await ActualizarUnaVezAsync(expedienteId, request, esReintento: false, cancellationToken);
+        }
+        catch (RegistroConcurrenteException)
+        {
+            // Dos guardados simultáneos del mismo envío: la base rechazó el segundo
+            // (un envío activo por judicial / clave de generación única). Se reintenta
+            // con datos frescos: si el envío ya registrado coincide, responde 200 con él;
+            // si no coincide, responde 400 EnvioCobroYaRegistrado.
+            _expedienteRepository.DescartarCambios();
+            return await ActualizarUnaVezAsync(expedienteId, request, esReintento: true, cancellationToken);
+        }
+    }
+
+    private async Task<Result<ExpedienteResponse>> ActualizarUnaVezAsync(
+        long expedienteId,
+        ActualizarExpedienteRequest request,
+        bool esReintento,
+        CancellationToken cancellationToken
+    )
+    {
         var expediente = await _expedienteRepository.ObtenerPorIdAsync(
             expedienteId,
             cancellationToken
@@ -273,6 +297,7 @@ public sealed class ExpedientesService : IExpedientesService
         var errorEnvioCobro = await RegistrarEnvioCobroAsync(
             expediente,
             request.EnvioCobro,
+            esReintento,
             cancellationToken
         );
 
@@ -432,6 +457,7 @@ public sealed class ExpedientesService : IExpedientesService
     private async Task<Error?> RegistrarEnvioCobroAsync(
         Expediente expediente,
         RegistrarEnvioCobroRequest? solicitud,
+        bool esReintento,
         CancellationToken cancellationToken
     )
     {
@@ -479,9 +505,20 @@ public sealed class ExpedientesService : IExpedientesService
 
         var generacion = generacionResult.Value!;
 
-        // Una generación ya persistida con la misma clave pertenece a un envío anterior.
+        // Una generación ya persistida con la misma clave pertenece a otro envío.
+        // Si aparece en el primer intento, lo más probable es que una solicitud
+        // simultánea la haya registrado después de leer el judicial: se reintenta
+        // con datos frescos (ver ActualizarAsync). En el reintento ya es un error real.
         if (generacion.AgendaGeneracionReglaId != 0)
         {
+            if (!esReintento)
+            {
+                throw new RegistroConcurrenteException(
+                    "cobro-judicial:generacion-existente",
+                    null
+                );
+            }
+
             return ExpedienteErrors.SeguimientoCobroYaGenerado;
         }
 
@@ -547,7 +584,9 @@ public sealed class ExpedientesService : IExpedientesService
             FechaSeguimiento = fechaSeguimiento,
             EstadoSeguimiento = generacion.EntradaAgenda.Estado,
             DiasParaSeguimiento = diasParaSeguimiento,
-            SeguimientoVencido = diasParaSeguimiento < 0,
+            // Mismo criterio que Agenda: un seguimiento Completado o Cancelado no está vencido.
+            SeguimientoVencido = CriteriosAgenda.EstaAbierta(generacion.EntradaAgenda.Estado)
+                && diasParaSeguimiento < 0,
             FechaRegistro = envio.FechaCreacion,
             UsuarioRegistro = envio.UsuarioCreacion,
         };

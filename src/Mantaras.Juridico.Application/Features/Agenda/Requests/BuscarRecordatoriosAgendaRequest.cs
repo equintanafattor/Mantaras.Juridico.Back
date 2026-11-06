@@ -8,6 +8,9 @@ public sealed class BuscarRecordatoriosAgendaRequest
 
     public EstadoRecordatorioAgenda? Estado { get; set; }
 
+    // true: excluye avisos de entradas Completadas o Canceladas (no modifica los avisos).
+    public bool SoloEntradasAbiertas { get; set; }
+
     public int Page { get; set; } = 1;
 
     public int PageSize { get; set; } = 20;

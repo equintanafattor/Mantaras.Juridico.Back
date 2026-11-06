@@ -42,6 +42,8 @@ public sealed class PanelAgendaData
 
     public int Vencidos { get; init; }
 
+    public int Atrasados { get; init; }
+
     public IReadOnlyCollection<PanelAgendaItemData> ElementosProximos { get; init; } =
         Array.Empty<PanelAgendaItemData>();
 }
@@ -63,6 +65,8 @@ public sealed class PanelAgendaItemData
     public DateOnly FechaReferencia { get; init; }
 
     public TimeOnly? HoraReferencia { get; init; }
+
+    public bool EsDeHoy { get; init; }
 
     public IReadOnlyCollection<PanelAgendaContextoData> Clientes { get; init; } =
         Array.Empty<PanelAgendaContextoData>();

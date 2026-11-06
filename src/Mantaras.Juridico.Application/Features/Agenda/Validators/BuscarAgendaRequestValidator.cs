@@ -23,6 +23,10 @@ public sealed class BuscarAgendaRequestValidator
             .When(x => x.Estado.HasValue)
             .WithMessage("El estado informado no es válido.");
 
+        RuleFor(x => x.Orden)
+            .IsInEnum()
+            .WithMessage("El orden informado no es válido.");
+
         ValidarId(x => x.ResponsableId, "responsable");
         ValidarId(x => x.ClienteId, "cliente");
         ValidarId(x => x.CasoId, "expediente administrativo");

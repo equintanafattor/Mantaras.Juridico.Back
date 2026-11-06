@@ -21,6 +21,7 @@ public interface IRecordatoriosAgendaRepository
     Task<IReadOnlyCollection<RecordatorioAgenda>> BuscarAsync(
         long? entradaAgendaId,
         EstadoRecordatorioAgenda? estado,
+        bool soloEntradasAbiertas,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default
@@ -29,6 +30,7 @@ public interface IRecordatoriosAgendaRepository
     Task<int> ContarAsync(
         long? entradaAgendaId,
         EstadoRecordatorioAgenda? estado,
+        bool soloEntradasAbiertas,
         CancellationToken cancellationToken = default
     );
 

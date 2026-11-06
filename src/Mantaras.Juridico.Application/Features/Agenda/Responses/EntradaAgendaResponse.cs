@@ -40,6 +40,13 @@ public sealed class EntradaAgendaResponse
 
     public bool ProximaAVencer { get; set; }
 
+    // Abierta, sin vencimiento y con (FechaFin ?? FechaInicio) anterior a hoy.
+    public bool EstaAtrasada { get; set; }
+
+    // Estados a los que se puede pasar desde el actual con PATCH /api/agenda/{id}/estado.
+    public IReadOnlyCollection<EstadoEntradaAgenda> TransicionesPermitidas { get; set; } =
+        Array.Empty<EstadoEntradaAgenda>();
+
     public string ZonaHoraria { get; set; } = string.Empty;
 
     public IReadOnlyCollection<long> ClienteIds { get; set; } = Array.Empty<long>();
@@ -49,6 +56,19 @@ public sealed class EntradaAgendaResponse
     public IReadOnlyCollection<long> ExpedienteIds { get; set; } = Array.Empty<long>();
 
     public IReadOnlyCollection<long> ResponsableIds { get; set; } = Array.Empty<long>();
+
+    // Mismas relaciones con nombre que el listado. Los *Ids se mantienen por compatibilidad.
+    public IReadOnlyCollection<RelacionAgendaResponse> Clientes { get; set; } =
+        Array.Empty<RelacionAgendaResponse>();
+
+    public IReadOnlyCollection<RelacionAgendaResponse> Casos { get; set; } =
+        Array.Empty<RelacionAgendaResponse>();
+
+    public IReadOnlyCollection<RelacionAgendaResponse> Expedientes { get; set; } =
+        Array.Empty<RelacionAgendaResponse>();
+
+    public IReadOnlyCollection<RelacionAgendaResponse> Responsables { get; set; } =
+        Array.Empty<RelacionAgendaResponse>();
 
     public DateTime FechaCreacion { get; set; }
 

@@ -40,6 +40,13 @@ public sealed class EntradaAgendaListadoResponse
 
     public bool ProximaAVencer { get; set; }
 
+    // Abierta, sin vencimiento y con (FechaFin ?? FechaInicio) anterior a hoy.
+    public bool EstaAtrasada { get; set; }
+
+    // Estados a los que se puede pasar desde el actual con PATCH /api/agenda/{id}/estado.
+    public IReadOnlyCollection<EstadoEntradaAgenda> TransicionesPermitidas { get; set; } =
+        Array.Empty<EstadoEntradaAgenda>();
+
     public IReadOnlyCollection<RelacionAgendaResponse> Clientes { get; set; } =
         Array.Empty<RelacionAgendaResponse>();
 

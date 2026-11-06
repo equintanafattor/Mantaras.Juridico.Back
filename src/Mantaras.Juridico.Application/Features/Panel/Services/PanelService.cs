@@ -88,6 +88,7 @@ public sealed class PanelService : IPanelService
                 Hoy = agenda.Hoy,
                 Proximos = agenda.Proximos,
                 Vencidos = agenda.Vencidos,
+                Atrasados = agenda.Atrasados,
                 ElementosProximos = agenda.ElementosProximos
                     .Select(x => MapearAgenda(x, hoy))
                     .ToArray(),
@@ -132,7 +133,7 @@ public sealed class PanelService : IPanelService
             Prioridad = entrada.Prioridad,
             FechaReferencia = entrada.FechaReferencia,
             HoraReferencia = entrada.HoraReferencia,
-            EsDeHoy = entrada.FechaReferencia == hoy,
+            EsDeHoy = entrada.EsDeHoy,
             Contextos = contextos,
         };
     }

@@ -1,4 +1,5 @@
 using Mantaras.Juridico.Application.Common.Interfaces;
+using Mantaras.Juridico.Application.Features.Agenda;
 using Mantaras.Juridico.Domain.Entities;
 using Mantaras.Juridico.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -83,32 +84,35 @@ public sealed class PanelRepository : IPanelRepository
         CancellationToken cancellationToken = default
     )
     {
+        // Criterio de CriteriosAgenda. Las cuatro métricas separan todas las entradas abiertas:
+        // - Vencidos: con vencimiento anterior a hoy.
+        // - Atrasados: sin vencimiento y con (FechaFin ?? FechaInicio) anterior a hoy.
+        // - Hoy: vencen hoy, o sin vencimiento ocurren hoy (incluye eventos de varios días en curso).
+        // - Próximos: vencen o empiezan después de hoy.
         var entradasActivas = _dbContext
             .EntradasAgenda.AsNoTracking()
-            .Where(x =>
-                x.Activo
-                && x.Estado != EstadoEntradaAgenda.Completada
-                && x.Estado != EstadoEntradaAgenda.Cancelada
-            );
+            .Where(x => x.Activo)
+            .Where(CriteriosAgenda.Abierta());
 
-        var metricas = await entradasActivas
-            .GroupBy(_ => 1)
-            .Select(grupo => new
-            {
-                Hoy = grupo.Count(x =>
-                    (x.FechaVencimiento ?? x.FechaInicio) == hoy
-                ),
-                Proximos = grupo.Count(x =>
-                    (x.FechaVencimiento ?? x.FechaInicio) > hoy
-                ),
-                Vencidos = grupo.Count(x =>
-                    (x.FechaVencimiento ?? x.FechaInicio) < hoy
-                ),
-            })
-            .SingleOrDefaultAsync(cancellationToken);
+        var vencidos = await entradasActivas
+            .CountAsync(CriteriosAgenda.Vencida(hoy), cancellationToken);
+        var atrasados = await entradasActivas
+            .CountAsync(CriteriosAgenda.Atrasada(hoy), cancellationToken);
+        var deHoy = await entradasActivas.CountAsync(
+            x => x.FechaVencimiento.HasValue
+                ? x.FechaVencimiento.Value == hoy
+                : x.FechaInicio <= hoy && (x.FechaFin ?? x.FechaInicio) >= hoy,
+            cancellationToken
+        );
+        var proximos = await entradasActivas.CountAsync(
+            x => x.FechaVencimiento.HasValue
+                ? x.FechaVencimiento.Value > hoy
+                : x.FechaInicio > hoy,
+            cancellationToken
+        );
 
         var elementosProximos = await entradasActivas
-            .Where(x => (x.FechaVencimiento ?? x.FechaInicio) >= hoy)
+            .Where(x => (x.FechaVencimiento ?? x.FechaFin ?? x.FechaInicio) >= hoy)
             .OrderBy(x => x.FechaVencimiento ?? x.FechaInicio)
             .ThenBy(x => x.HoraVencimiento ?? x.HoraInicio)
             .ThenByDescending(x => x.Prioridad)
@@ -126,6 +130,9 @@ public sealed class PanelRepository : IPanelRepository
                 HoraReferencia = x.FechaVencimiento.HasValue
                     ? x.HoraVencimiento
                     : x.HoraInicio,
+                EsDeHoy = x.FechaVencimiento.HasValue
+                    ? x.FechaVencimiento.Value == hoy
+                    : x.FechaInicio <= hoy && (x.FechaFin ?? x.FechaInicio) >= hoy,
                 Clientes = x.Clientes
                     .OrderBy(relacion => relacion.Cliente.Apellido)
                     .ThenBy(relacion => relacion.Cliente.Nombre)
@@ -158,9 +165,10 @@ public sealed class PanelRepository : IPanelRepository
 
         return new PanelAgendaData
         {
-            Hoy = metricas?.Hoy ?? 0,
-            Proximos = metricas?.Proximos ?? 0,
-            Vencidos = metricas?.Vencidos ?? 0,
+            Hoy = deHoy,
+            Proximos = proximos,
+            Vencidos = vencidos,
+            Atrasados = atrasados,
             ElementosProximos = elementosProximos,
         };
     }

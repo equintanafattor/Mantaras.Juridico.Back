@@ -10,8 +10,6 @@ namespace Mantaras.Juridico.Application.Features.Agenda.Services;
 
 public sealed class AgendaService : IAgendaService
 {
-    private const int DiasProximoVencimiento = 7;
-
     private readonly IAgendaRepository _agendaRepository;
     private readonly ICurrentUserService _currentUser;
 
@@ -121,7 +119,7 @@ public sealed class AgendaService : IAgendaService
         await _agendaRepository.AgregarAsync(entrada, cancellationToken);
         await _agendaRepository.GuardarCambiosAsync(cancellationToken);
 
-        return Result<EntradaAgendaResponse>.Success(MapearResponse(entrada));
+        return await ResponderAsync(entrada.EntradaAgendaId, cancellationToken);
     }
 
     public Task<Result<EntradaAgendaResponse>> CrearVencimientoManualAsync(
@@ -146,15 +144,7 @@ public sealed class AgendaService : IAgendaService
         CancellationToken cancellationToken = default
     )
     {
-        var entrada = await _agendaRepository.ObtenerPorIdAsync(
-            entradaAgendaId,
-            seguimiento: false,
-            cancellationToken: cancellationToken
-        );
-
-        return entrada is null
-            ? Result<EntradaAgendaResponse>.Failure(AgendaErrors.NoEncontrada)
-            : Result<EntradaAgendaResponse>.Success(MapearResponse(entrada));
+        return await ResponderAsync(entradaAgendaId, cancellationToken);
     }
 
     public async Task<Result<EntradaAgendaResponse>> ActualizarAsync(
@@ -210,7 +200,7 @@ public sealed class AgendaService : IAgendaService
 
         await _agendaRepository.GuardarCambiosAsync(cancellationToken);
 
-        return Result<EntradaAgendaResponse>.Success(MapearResponse(entrada));
+        return await ResponderAsync(entrada.EntradaAgendaId, cancellationToken);
     }
 
     public async Task<PagedResponse<EntradaAgendaListadoResponse>> BuscarAsync(
@@ -219,34 +209,12 @@ public sealed class AgendaService : IAgendaService
     )
     {
         var entradas = await _agendaRepository.BuscarAsync(
-            request.Desde,
-            request.Hasta,
-            request.TipoEntradaAgendaId,
-            request.Estado,
-            request.ResponsableId,
-            request.ClienteId,
-            request.CasoId,
-            request.ExpedienteId,
-            request.Busqueda,
-            request.IncluirVencimientos,
-            request.SoloActivos,
-            request.Page,
-            request.PageSize,
+            request,
             cancellationToken
         );
 
         var totalItems = await _agendaRepository.ContarAsync(
-            request.Desde,
-            request.Hasta,
-            request.TipoEntradaAgendaId,
-            request.Estado,
-            request.ResponsableId,
-            request.ClienteId,
-            request.CasoId,
-            request.ExpedienteId,
-            request.Busqueda,
-            request.IncluirVencimientos,
-            request.SoloActivos,
+            request,
             cancellationToken
         );
 
@@ -264,7 +232,7 @@ public sealed class AgendaService : IAgendaService
         return new PagedResponse<EntradaAgendaListadoResponse>
         {
             Items = entradas
-                .Select(x => MapearListadoResponse(x, nombresResponsables))
+                .Select(x => EntradaAgendaMapper.MapearListado(x, nombresResponsables))
                 .ToArray(),
             Page = request.Page,
             PageSize = request.PageSize,
@@ -291,10 +259,10 @@ public sealed class AgendaService : IAgendaService
 
         if (entrada.Estado == request.Estado)
         {
-            return Result<EntradaAgendaResponse>.Success(MapearResponse(entrada));
+            return await ResponderAsync(entrada.EntradaAgendaId, cancellationToken);
         }
 
-        if (!PuedeCambiarEstado(entrada.Estado, request.Estado))
+        if (!CriteriosAgenda.TransicionesPermitidas(entrada.Estado).Contains(request.Estado))
         {
             return Result<EntradaAgendaResponse>.Failure(
                 AgendaErrors.TransicionEstadoInvalida(
@@ -310,7 +278,23 @@ public sealed class AgendaService : IAgendaService
 
         await _agendaRepository.GuardarCambiosAsync(cancellationToken);
 
-        return Result<EntradaAgendaResponse>.Success(MapearResponse(entrada));
+        return await ResponderAsync(entrada.EntradaAgendaId, cancellationToken);
+    }
+
+    private async Task<Result<EntradaAgendaResponse>> ResponderAsync(
+        long entradaAgendaId,
+        CancellationToken cancellationToken
+    )
+    {
+        var response = await EntradaAgendaMapper.ObtenerDetalleAsync(
+            _agendaRepository,
+            entradaAgendaId,
+            cancellationToken
+        );
+
+        return response is null
+            ? Result<EntradaAgendaResponse>.Failure(AgendaErrors.NoEncontrada)
+            : Result<EntradaAgendaResponse>.Success(response);
     }
 
     private async Task<Result<TipoEntradaAgenda>> ValidarReferenciasAsync(
@@ -479,111 +463,6 @@ public sealed class AgendaService : IAgendaService
         }
     }
 
-    private static EntradaAgendaResponse MapearResponse(EntradaAgenda entrada)
-    {
-        var vencimiento = CalcularVencimiento(entrada);
-
-        return new EntradaAgendaResponse
-        {
-            EntradaAgendaId = entrada.EntradaAgendaId,
-            RecurrenciaAgendaId = entrada.RecurrenciaAgendaId,
-            TipoEntradaAgendaId = entrada.TipoEntradaAgendaId,
-            TipoEntradaNombre = entrada.TipoEntrada.Nombre,
-            TipoEntradaColor = entrada.TipoEntrada.Color,
-            Titulo = entrada.Titulo,
-            Descripcion = entrada.Descripcion,
-            Estado = entrada.Estado,
-            Prioridad = entrada.Prioridad,
-            FechaInicio = entrada.FechaInicio,
-            HoraInicio = entrada.HoraInicio,
-            FechaFin = entrada.FechaFin,
-            HoraFin = entrada.HoraFin,
-            FechaVencimiento = entrada.FechaVencimiento,
-            HoraVencimiento = entrada.HoraVencimiento,
-            DiasParaVencimiento = vencimiento.DiasParaVencimiento,
-            EstaVencida = vencimiento.EstaVencida,
-            ProximaAVencer = vencimiento.ProximaAVencer,
-            ZonaHoraria = entrada.ZonaHoraria,
-            ClienteIds = entrada.Clientes.Select(x => x.ClienteId).ToArray(),
-            CasoIds = entrada.Casos.Select(x => x.CasoId).ToArray(),
-            ExpedienteIds = entrada.Expedientes.Select(x => x.ExpedienteId).ToArray(),
-            ResponsableIds = entrada.Responsables.Select(x => x.UsuarioId).ToArray(),
-            FechaCreacion = entrada.FechaCreacion,
-            FechaModificacion = entrada.FechaModificacion,
-            Activo = entrada.Activo,
-        };
-    }
-
-    private static EntradaAgendaListadoResponse MapearListadoResponse(
-        EntradaAgenda entrada,
-        IReadOnlyDictionary<long, string> nombresResponsables
-    )
-    {
-        var vencimiento = CalcularVencimiento(entrada);
-
-        return new EntradaAgendaListadoResponse
-        {
-            EntradaAgendaId = entrada.EntradaAgendaId,
-            RecurrenciaAgendaId = entrada.RecurrenciaAgendaId,
-            TipoEntradaAgendaId = entrada.TipoEntradaAgendaId,
-            TipoEntradaNombre = entrada.TipoEntrada.Nombre,
-            TipoEntradaColor = entrada.TipoEntrada.Color,
-            Titulo = entrada.Titulo,
-            Descripcion = entrada.Descripcion,
-            Estado = entrada.Estado,
-            Prioridad = entrada.Prioridad,
-            FechaInicio = entrada.FechaInicio,
-            HoraInicio = entrada.HoraInicio,
-            FechaFin = entrada.FechaFin,
-            HoraFin = entrada.HoraFin,
-            FechaVencimiento = entrada.FechaVencimiento,
-            HoraVencimiento = entrada.HoraVencimiento,
-            DiasParaVencimiento = vencimiento.DiasParaVencimiento,
-            EstaVencida = vencimiento.EstaVencida,
-            ProximaAVencer = vencimiento.ProximaAVencer,
-            Clientes = entrada.Clientes
-                .OrderBy(x => x.Cliente.Apellido)
-                .ThenBy(x => x.Cliente.Nombre)
-                .Select(x => new RelacionAgendaResponse
-                {
-                    Id = x.ClienteId,
-                    Nombre = $"{x.Cliente.Apellido}, {x.Cliente.Nombre}",
-                    Referencia = x.Cliente.Dni ?? x.Cliente.Cuil,
-                })
-                .ToArray(),
-            Casos = entrada.Casos
-                .OrderBy(x => x.Caso.Titulo)
-                .Select(x => new RelacionAgendaResponse
-                {
-                    Id = x.CasoId,
-                    Nombre = x.Caso.Titulo,
-                    Referencia = x.Caso.NumeroExpedienteAnses ?? x.Caso.NumeroBeneficio,
-                })
-                .ToArray(),
-            Expedientes = entrada.Expedientes
-                .OrderBy(x => x.Expediente.Caratula)
-                .Select(x => new RelacionAgendaResponse
-                {
-                    Id = x.ExpedienteId,
-                    Nombre = x.Expediente.Caratula,
-                    Referencia = x.Expediente.NumeroExpediente,
-                })
-                .ToArray(),
-            Responsables = entrada.Responsables
-                .OrderBy(x => nombresResponsables.GetValueOrDefault(x.UsuarioId))
-                .Select(x => new RelacionAgendaResponse
-                {
-                    Id = x.UsuarioId,
-                    Nombre = nombresResponsables.GetValueOrDefault(
-                        x.UsuarioId,
-                        "Usuario no disponible"
-                    ),
-                })
-                .ToArray(),
-            Activo = entrada.Activo,
-        };
-    }
-
     private static string? NormalizarOpcional(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
@@ -614,66 +493,4 @@ public sealed class AgendaService : IAgendaService
         return new DateOnly(primerDia.Year, primerDia.Month,
             Math.Min(inicio.Day, DateTime.DaysInMonth(primerDia.Year, primerDia.Month)));
     }
-
-    private static bool PuedeCambiarEstado(
-        EstadoEntradaAgenda estadoActual,
-        EstadoEntradaAgenda estadoSolicitado
-    )
-    {
-        return estadoActual switch
-        {
-            EstadoEntradaAgenda.Pendiente => estadoSolicitado is
-                EstadoEntradaAgenda.EnCurso
-                or EstadoEntradaAgenda.Pospuesta
-                or EstadoEntradaAgenda.Completada
-                or EstadoEntradaAgenda.Cancelada,
-            EstadoEntradaAgenda.EnCurso => estadoSolicitado is
-                EstadoEntradaAgenda.Pendiente
-                or EstadoEntradaAgenda.Pospuesta
-                or EstadoEntradaAgenda.Completada
-                or EstadoEntradaAgenda.Cancelada,
-            EstadoEntradaAgenda.Pospuesta => estadoSolicitado is
-                EstadoEntradaAgenda.Pendiente
-                or EstadoEntradaAgenda.EnCurso
-                or EstadoEntradaAgenda.Completada
-                or EstadoEntradaAgenda.Cancelada,
-            EstadoEntradaAgenda.Completada or EstadoEntradaAgenda.Cancelada =>
-                estadoSolicitado == EstadoEntradaAgenda.Pendiente,
-            _ => false,
-        };
-    }
-
-    private static CalculoVencimiento CalcularVencimiento(
-        EntradaAgenda entrada
-    )
-    {
-        if (!entrada.FechaVencimiento.HasValue)
-        {
-            return new CalculoVencimiento(null, false, false);
-        }
-
-        var zonaHoraria = TimeZoneInfo.FindSystemTimeZoneById(
-            entrada.ZonaHoraria
-        );
-        var fechaLocal = TimeZoneInfo.ConvertTimeFromUtc(
-            DateTime.UtcNow,
-            zonaHoraria
-        );
-        var hoy = DateOnly.FromDateTime(fechaLocal);
-        var dias = entrada.FechaVencimiento.Value.DayNumber - hoy.DayNumber;
-        var abierta = entrada.Estado is not
-            (EstadoEntradaAgenda.Completada or EstadoEntradaAgenda.Cancelada);
-
-        return new CalculoVencimiento(
-            dias,
-            abierta && dias < 0,
-            abierta && dias is >= 0 and <= DiasProximoVencimiento
-        );
-    }
-
-    private sealed record CalculoVencimiento(
-        int? DiasParaVencimiento,
-        bool EstaVencida,
-        bool ProximaAVencer
-    );
 }

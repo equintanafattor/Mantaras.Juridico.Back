@@ -164,6 +164,7 @@ public sealed class RecordatoriosAgendaService : IRecordatoriosAgendaService
         var recordatorios = await _recordatoriosRepository.BuscarAsync(
             request.EntradaAgendaId,
             request.Estado,
+            request.SoloEntradasAbiertas,
             request.Page,
             request.PageSize,
             cancellationToken
@@ -171,6 +172,7 @@ public sealed class RecordatoriosAgendaService : IRecordatoriosAgendaService
         var totalItems = await _recordatoriosRepository.ContarAsync(
             request.EntradaAgendaId,
             request.Estado,
+            request.SoloEntradasAbiertas,
             cancellationToken
         );
 
@@ -263,6 +265,7 @@ public sealed class RecordatoriosAgendaService : IRecordatoriosAgendaService
             EntradaTitulo = recordatorio.EntradaAgenda.Titulo,
             TipoEntradaNombre = recordatorio.EntradaAgenda.TipoEntrada.Nombre,
             TipoEntradaColor = recordatorio.EntradaAgenda.TipoEntrada.Color,
+            EntradaEstado = recordatorio.EntradaAgenda.Estado,
             Canal = recordatorio.Canal,
             FechaProgramadaUtc = recordatorio.FechaProgramadaUtc,
             Estado = estado,

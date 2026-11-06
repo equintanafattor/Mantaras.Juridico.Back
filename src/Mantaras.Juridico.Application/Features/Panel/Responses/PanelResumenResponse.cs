@@ -51,7 +51,11 @@ public sealed class PanelAgendaResponse
 
     public int Proximos { get; init; }
 
+    // Abiertas con vencimiento anterior a hoy (mismo criterio que estaVencida de Agenda).
     public int Vencidos { get; init; }
+
+    // Abiertas sin vencimiento con (FechaFin ?? FechaInicio) anterior a hoy (estaAtrasada).
+    public int Atrasados { get; init; }
 
     public IReadOnlyCollection<PanelAgendaItemResponse> ElementosProximos
     {

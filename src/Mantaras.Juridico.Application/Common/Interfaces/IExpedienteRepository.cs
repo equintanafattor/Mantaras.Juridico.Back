@@ -53,9 +53,13 @@ public interface IExpedienteRepository
         CancellationToken cancellationToken = default
     );
 
+    // Lanza RegistroConcurrenteException si un índice único del seguimiento de cobro rechaza el guardado.
     Task GuardarCambiosAsync(
         CancellationToken cancellationToken = default
     );
+
+    // Descarta lo pendiente del contexto para reintentar con datos frescos.
+    void DescartarCambios();
 
     Task<bool> TieneDerivadosActivosAsync(
         long expedienteId,

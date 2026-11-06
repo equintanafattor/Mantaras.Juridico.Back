@@ -85,7 +85,7 @@ Las dos respuestas (y la del `PUT`) traen `envioCobro`, que es `null` si el judi
 - `fechaSeguimiento`: el día 120 hábil, es decir, el vencimiento de la entrada de agenda.
 - `estadoSeguimiento`: el estado de esa entrada (`Pendiente`, `EnCurso`, `Pospuesta`, `Completada`, `Cancelada`).
 - `diasParaSeguimiento`: días **corridos** que faltan hasta `fechaSeguimiento`. Es negativo si ya pasó.
-- `seguimientoVencido`: `true` si `fechaSeguimiento` es anterior a hoy.
+- `seguimientoVencido`: `true` si el seguimiento sigue abierto y `fechaSeguimiento` es anterior a hoy. Con `Completada` o `Cancelada` es `false` (ver `docs/brief-agenda-simplificacion-backend.md`).
 - `entradaAgendaId`: sirve para abrir la entrada con `GET /api/agenda/{id}` y su alerta con `GET /api/recordatorios-agenda?EntradaAgendaId={id}`.
 
 ### 3. Listado de expedientes de cobro — `GET /api/expedientes/cobro` (nuevo)
@@ -163,7 +163,7 @@ Otros puntos a tener en cuenta:
 
 - Si se cargan días inhábiles **después** de registrar un envío, la fecha ya generada no se recalcula. El motor actual se comporta igual para todas las reglas.
 - Si la regla está inactiva, el registro del envío falla con `400` en lugar de guardar un envío sin alerta. Hay que confirmar si ese es el comportamiento buscado.
-- Ante dos guardados **simultáneos** del mismo envío, la base de datos garantiza que no haya duplicados. En la prueba con 6 solicitudes en paralelo, todas devolvieron `200` y quedó un solo envío. Igualmente, no se descarta que en una carrera real la solicitud perdedora reciba un `500`.
+- Ante dos guardados **simultáneos** del mismo envío, la base de datos garantiza que no haya duplicados. En la prueba con 6 solicitudes en paralelo, todas devolvieron `200` y quedó un solo envío. La solicitud perdedora de una carrera ahora se reintenta y responde `200` con el envío existente, o `400` si los datos difieren (ver `docs/brief-agenda-simplificacion-backend.md`).
 
 ## Verificaciones realizadas (solo local)
 

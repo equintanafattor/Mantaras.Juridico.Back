@@ -1,3 +1,4 @@
+using Mantaras.Juridico.Application.Common.Exceptions;
 using Mantaras.Juridico.Application.Common.Interfaces;
 using Mantaras.Juridico.Application.Common.Results;
 using Mantaras.Juridico.Application.Features.Agenda.Requests;
@@ -9,8 +10,6 @@ namespace Mantaras.Juridico.Application.Features.Agenda.Services;
 
 public sealed class ReglasVencimientoService : IReglasVencimientoService
 {
-    private const int DiasProximoVencimiento = 7;
-
     private readonly IAgendaRepository _agendaRepository;
     private readonly ICurrentUserService _currentUser;
 
@@ -175,6 +174,25 @@ public sealed class ReglasVencimientoService : IReglasVencimientoService
         CancellationToken cancellationToken = default
     )
     {
+        try
+        {
+            return await AplicarUnaVezAsync(reglaVencimientoId, request, cancellationToken);
+        }
+        catch (RegistroConcurrenteException)
+        {
+            // Otra solicitud con la misma clave se guardó primero: se descarta
+            // lo pendiente y se reintenta, que devuelve la generación existente.
+            _agendaRepository.DescartarCambios();
+            return await AplicarUnaVezAsync(reglaVencimientoId, request, cancellationToken);
+        }
+    }
+
+    private async Task<Result<AplicacionReglaVencimientoResponse>> AplicarUnaVezAsync(
+        long reglaVencimientoId,
+        AplicarReglaVencimientoRequest request,
+        CancellationToken cancellationToken
+    )
+    {
         var claveIdempotencia = ConstruirClaveIdempotencia(
             reglaVencimientoId,
             request.ClaveIdempotencia
@@ -188,7 +206,7 @@ public sealed class ReglasVencimientoService : IReglasVencimientoService
         if (generacionExistente is not null)
         {
             return Result<AplicacionReglaVencimientoResponse>.Success(
-                MapearAplicacionResponse(generacionExistente)
+                await MapearAplicacionResponseAsync(generacionExistente, cancellationToken)
             );
         }
 
@@ -197,6 +215,16 @@ public sealed class ReglasVencimientoService : IReglasVencimientoService
             seguimiento: true,
             cancellationToken: cancellationToken
         );
+
+        // Las reglas con código las aplica el sistema desde su propio flujo
+        // (por ejemplo, el envío de cobro). Aplicarlas a mano crearía un
+        // seguimiento sin su registro de origen.
+        if (regla?.Codigo is not null)
+        {
+            return Result<AplicacionReglaVencimientoResponse>.Failure(
+                AgendaErrors.ReglaDeSistema
+            );
+        }
 
         var generacionResult = await PrepararGeneracionAsync(
             regla,
@@ -215,7 +243,7 @@ public sealed class ReglasVencimientoService : IReglasVencimientoService
         await _agendaRepository.GuardarCambiosAsync(cancellationToken);
 
         return Result<AplicacionReglaVencimientoResponse>.Success(
-            MapearAplicacionResponse(generacionResult.Value!)
+            await MapearAplicacionResponseAsync(generacionResult.Value!, cancellationToken)
         );
     }
 
@@ -571,10 +599,19 @@ public sealed class ReglasVencimientoService : IReglasVencimientoService
         return fecha;
     }
 
-    private static AplicacionReglaVencimientoResponse MapearAplicacionResponse(
-        AgendaGeneracionRegla generacion
+    private async Task<AplicacionReglaVencimientoResponse> MapearAplicacionResponseAsync(
+        AgendaGeneracionRegla generacion,
+        CancellationToken cancellationToken
     )
     {
+        var entrada = await EntradaAgendaMapper.ObtenerDetalleAsync(
+            _agendaRepository,
+            generacion.EntradaAgendaId == 0
+                ? generacion.EntradaAgenda.EntradaAgendaId
+                : generacion.EntradaAgendaId,
+            cancellationToken
+        );
+
         return new AplicacionReglaVencimientoResponse
         {
             AgendaGeneracionReglaId = generacion.AgendaGeneracionReglaId,
@@ -588,52 +625,7 @@ public sealed class ReglasVencimientoService : IReglasVencimientoService
             ExpedienteOrigenId = generacion.ExpedienteOrigenId,
             ObservacionOrigenId = generacion.ObservacionOrigenId,
             ClaveIdempotencia = generacion.ClaveIdempotencia,
-            Entrada = MapearEntradaResponse(generacion.EntradaAgenda),
-        };
-    }
-
-    private static EntradaAgendaResponse MapearEntradaResponse(
-        EntradaAgenda entrada
-    )
-    {
-        var fechaLocal = TimeZoneInfo.ConvertTimeFromUtc(
-            DateTime.UtcNow,
-            TimeZoneInfo.FindSystemTimeZoneById(entrada.ZonaHoraria)
-        );
-        var hoy = DateOnly.FromDateTime(fechaLocal);
-        var diasParaVencimiento = entrada.FechaVencimiento.HasValue
-            ? entrada.FechaVencimiento.Value.DayNumber - hoy.DayNumber
-            : (int?)null;
-
-        return new EntradaAgendaResponse
-        {
-            EntradaAgendaId = entrada.EntradaAgendaId,
-            TipoEntradaAgendaId = entrada.TipoEntradaAgendaId,
-            TipoEntradaNombre = entrada.TipoEntrada.Nombre,
-            TipoEntradaColor = entrada.TipoEntrada.Color,
-            Titulo = entrada.Titulo,
-            Descripcion = entrada.Descripcion,
-            Estado = entrada.Estado,
-            Prioridad = entrada.Prioridad,
-            FechaInicio = entrada.FechaInicio,
-            HoraInicio = entrada.HoraInicio,
-            FechaVencimiento = entrada.FechaVencimiento,
-            HoraVencimiento = entrada.HoraVencimiento,
-            DiasParaVencimiento = diasParaVencimiento,
-            EstaVencida = diasParaVencimiento < 0,
-            ProximaAVencer = diasParaVencimiento is >= 0 and <= DiasProximoVencimiento,
-            ZonaHoraria = entrada.ZonaHoraria,
-            ClienteIds = entrada.Clientes.Select(x => x.ClienteId).ToArray(),
-            CasoIds = entrada.Casos.Select(x => x.CasoId).ToArray(),
-            ExpedienteIds = entrada.Expedientes
-                .Select(x => x.ExpedienteId)
-                .ToArray(),
-            ResponsableIds = entrada.Responsables
-                .Select(x => x.UsuarioId)
-                .ToArray(),
-            FechaCreacion = entrada.FechaCreacion,
-            FechaModificacion = entrada.FechaModificacion,
-            Activo = entrada.Activo,
+            Entrada = entrada!,
         };
     }
 

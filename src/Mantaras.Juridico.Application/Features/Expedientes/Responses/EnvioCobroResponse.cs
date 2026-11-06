@@ -20,8 +20,11 @@ public sealed class EnvioCobroResponse
 
     public EstadoEntradaAgenda EstadoSeguimiento { get; set; }
 
+    // Días corridos (no hábiles) desde hoy hasta FechaSeguimiento. Negativo si ya pasó.
+    // Los 120 días hábiles se usan para calcular FechaSeguimiento, no para este contador.
     public int DiasParaSeguimiento { get; set; }
 
+    // true solo si el seguimiento sigue abierto (no Completada/Cancelada) y FechaSeguimiento ya pasó.
     public bool SeguimientoVencido { get; set; }
 
     public DateTime FechaRegistro { get; set; }

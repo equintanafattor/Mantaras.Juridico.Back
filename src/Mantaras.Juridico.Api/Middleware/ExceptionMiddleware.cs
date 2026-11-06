@@ -1,11 +1,18 @@
 using System.Net;
 using System.Text.Json;
+using Mantaras.Juridico.Api.Contracts;
 using Mantaras.Juridico.Application.Common.Exceptions;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Mantaras.Juridico.Api.Middleware;
 
+// Las respuestas de error usan el mismo formato que los controladores:
+// { "errors": [ { "code": "...", "message": "..." } ] }
 public class ExceptionMiddleware
 {
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionMiddleware> _logger;
 
@@ -23,7 +30,24 @@ public class ExceptionMiddleware
         }
         catch (BusinessException exception)
         {
-            await EscribirRespuestaAsync(context, HttpStatusCode.BadRequest, exception.Message);
+            await EscribirRespuestaAsync(
+                context,
+                HttpStatusCode.BadRequest,
+                "General.ReglaDeNegocio",
+                exception.Message
+            );
+        }
+        catch (Exception exception) when (EsRegistroConcurrente(exception))
+        {
+            // Un índice único rechazó el guardado y el servicio no pudo resolverlo.
+            _logger.LogWarning(exception, "Conflicto de unicidad al guardar.");
+
+            await EscribirRespuestaAsync(
+                context,
+                HttpStatusCode.Conflict,
+                "General.RegistroConcurrente",
+                "Otra operación registró los mismos datos al mismo tiempo. Actualice la pantalla y vuelva a intentarlo."
+            );
         }
         catch (Exception exception)
         {
@@ -32,24 +56,39 @@ public class ExceptionMiddleware
             await EscribirRespuestaAsync(
                 context,
                 HttpStatusCode.InternalServerError,
+                "General.ErrorInterno",
                 "Ocurrió un error interno."
             );
         }
     }
 
+    private static bool EsRegistroConcurrente(Exception exception) =>
+        exception is RegistroConcurrenteException
+        || exception is DbUpdateException
+        {
+            InnerException: PostgresException { SqlState: PostgresErrorCodes.UniqueViolation },
+        };
+
     private static async Task EscribirRespuestaAsync(
         HttpContext context,
         HttpStatusCode statusCode,
+        string codigo,
         string mensaje
     )
     {
+        if (context.Response.HasStarted)
+        {
+            return;
+        }
+
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)statusCode;
 
-        var response = new { statusCode = context.Response.StatusCode, mensaje };
+        var response = new ApiErrorResponse
+        {
+            Errors = new[] { new ApiErrorItem { Code = codigo, Message = mensaje } },
+        };
 
-        var json = JsonSerializer.Serialize(response);
-
-        await context.Response.WriteAsync(json);
+        await context.Response.WriteAsync(JsonSerializer.Serialize(response, JsonOptions));
     }
 }

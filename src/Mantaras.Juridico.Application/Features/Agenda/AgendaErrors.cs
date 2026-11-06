@@ -55,6 +55,11 @@ public static class AgendaErrors
         "La regla de vencimiento seleccionada se encuentra inactiva."
     );
 
+    public static readonly Error ReglaDeSistema = new(
+        "Agenda.ReglaDeSistema",
+        "Esta regla la aplica el sistema desde su propio registro y no se puede aplicar manualmente."
+    );
+
     public static readonly Error OrigenFechaBaseNoEncontrado = new(
         "Agenda.OrigenFechaBaseNoEncontrado",
         "El origen seleccionado para la fecha base no existe o se encuentra inactivo."

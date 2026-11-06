@@ -1,3 +1,4 @@
+using Mantaras.Juridico.Application.Features.Agenda.Requests;
 using Mantaras.Juridico.Application.Features.Agenda.Responses;
 using Mantaras.Juridico.Domain.Entities;
 using Mantaras.Juridico.Domain.Enums;
@@ -40,34 +41,12 @@ public interface IAgendaRepository
     );
 
     Task<IReadOnlyCollection<EntradaAgenda>> BuscarAsync(
-        DateOnly? desde,
-        DateOnly? hasta,
-        long? tipoEntradaAgendaId,
-        EstadoEntradaAgenda? estado,
-        long? responsableId,
-        long? clienteId,
-        long? casoId,
-        long? expedienteId,
-        string? busqueda,
-        bool incluirVencimientos,
-        bool soloActivos,
-        int page,
-        int pageSize,
+        BuscarAgendaRequest filtro,
         CancellationToken cancellationToken = default
     );
 
     Task<int> ContarAsync(
-        DateOnly? desde,
-        DateOnly? hasta,
-        long? tipoEntradaAgendaId,
-        EstadoEntradaAgenda? estado,
-        long? responsableId,
-        long? clienteId,
-        long? casoId,
-        long? expedienteId,
-        string? busqueda,
-        bool incluirVencimientos,
-        bool soloActivos,
+        BuscarAgendaRequest filtro,
         CancellationToken cancellationToken = default
     );
 
@@ -127,7 +106,11 @@ public interface IAgendaRepository
         CancellationToken cancellationToken = default
     );
 
+    // Lanza RegistroConcurrenteException si un índice único rechaza el guardado.
     Task GuardarCambiosAsync(
         CancellationToken cancellationToken = default
     );
+
+    // Descarta lo pendiente del contexto para reintentar con datos frescos.
+    void DescartarCambios();
 }

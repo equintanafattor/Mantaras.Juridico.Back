@@ -1,4 +1,5 @@
 using Mantaras.Juridico.Domain.Entities;
+using Mantaras.Juridico.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -19,8 +20,16 @@ public sealed class DiaInhabilConfiguration
         builder.Property(x => x.UsuarioCreacion).HasMaxLength(100);
         builder.Property(x => x.UsuarioModificacion).HasMaxLength(100);
         builder.Property(x => x.Activo).HasDefaultValue(true).IsRequired();
+        builder.Property(x => x.Origen)
+            .HasConversion<int>()
+            .HasDefaultValue(OrigenDiaInhabil.Manual)
+            .IsRequired();
+        builder.Property(x => x.Fuente).HasMaxLength(100);
+        builder.Property(x => x.FechaFuente).HasColumnType("date");
+        builder.Property(x => x.ModificadoManualmente).HasDefaultValue(false).IsRequired();
 
         builder.HasIndex(x => x.Fecha).IsUnique();
         builder.HasIndex(x => x.Activo);
+        builder.HasIndex(x => x.FechaFuente);
     }
 }

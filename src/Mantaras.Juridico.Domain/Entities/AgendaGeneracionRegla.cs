@@ -27,6 +27,10 @@ public sealed class AgendaGeneracionRegla : AuditableEntity
 
     public string ClaveIdempotencia { get; set; } = string.Empty;
 
+    // Años del cómputo en días hábiles sin calendario de feriados importado
+    // al momento de calcular. La fecha no se recalcula si luego se importan.
+    public int[] AniosSinCalendario { get; set; } = Array.Empty<int>();
+
     public ReglaVencimiento ReglaVencimiento { get; set; } = null!;
 
     public EntradaAgenda EntradaAgenda { get; set; } = null!;

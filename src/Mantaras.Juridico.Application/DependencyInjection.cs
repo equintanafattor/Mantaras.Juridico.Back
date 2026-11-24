@@ -23,6 +23,7 @@ public static class DependencyInjection
 
         services.AddScoped<IAgendaService, AgendaService>();
         services.AddScoped<IDiasInhabilesService, DiasInhabilesService>();
+        services.AddScoped<IImportacionFeriadosService, ImportacionFeriadosService>();
         services.AddScoped<ITiposEntradaAgendaService, TiposEntradaAgendaService>();
         services.AddScoped<IReglasVencimientoService, ReglasVencimientoService>();
         services.AddScoped<

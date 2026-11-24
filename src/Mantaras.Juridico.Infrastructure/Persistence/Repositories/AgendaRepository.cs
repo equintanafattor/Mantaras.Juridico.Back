@@ -309,6 +309,19 @@ public sealed class AgendaRepository : IAgendaRepository
             .ToArrayAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyCollection<int>> ObtenerAniosConCalendarioAsync(
+        int desde,
+        int hasta,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return await _dbContext.CalendariosFeriadosImportados
+            .AsNoTracking()
+            .Where(x => x.Anio >= desde && x.Anio <= hasta)
+            .Select(x => x.Anio)
+            .ToArrayAsync(cancellationToken);
+    }
+
     public async Task AgregarReglaAsync(
         ReglaVencimiento regla,
         CancellationToken cancellationToken = default

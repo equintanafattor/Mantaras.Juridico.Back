@@ -75,6 +75,9 @@ public class JuridicoDbContext : IdentityDbContext<UsuarioIdentity, IdentityRole
 
     public DbSet<DiaInhabil> DiasInhabiles => Set<DiaInhabil>();
 
+    public DbSet<CalendarioFeriadosImportado> CalendariosFeriadosImportados =>
+        Set<CalendarioFeriadosImportado>();
+
     public DbSet<EnvioCobroExpediente> EnviosCobroExpedientes =>
         Set<EnvioCobroExpediente>();
 

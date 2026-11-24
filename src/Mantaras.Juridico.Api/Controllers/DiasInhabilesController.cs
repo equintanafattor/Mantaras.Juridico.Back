@@ -16,10 +16,15 @@ namespace Mantaras.Juridico.Api.Controllers;
 public class DiasInhabilesController : ControllerBase
 {
     private readonly IDiasInhabilesService _service;
+    private readonly IImportacionFeriadosService _importacionService;
 
-    public DiasInhabilesController(IDiasInhabilesService service)
+    public DiasInhabilesController(
+        IDiasInhabilesService service,
+        IImportacionFeriadosService importacionService
+    )
     {
         _service = service;
+        _importacionService = importacionService;
     }
 
     [HttpGet]
@@ -130,6 +135,71 @@ public class DiasInhabilesController : ControllerBase
         return NoContent();
     }
 
+    // Consulta la fuente oficial y compara con lo guardado. No modifica datos.
+    [HttpGet("importacion-nacional/{anio:int}/vista-previa")]
+    [ProducesResponseType(typeof(VistaPreviaImportacionFeriadosResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<VistaPreviaImportacionFeriadosResponse>> VistaPreviaImportacion(
+        int anio,
+        CancellationToken cancellationToken
+    )
+    {
+        var result = await _importacionService.ObtenerVistaPreviaAsync(anio, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return CrearRespuestaError(result.Errors);
+        }
+
+        return Ok(result.Value);
+    }
+
+    // Aplica la vista previa identificada por la huella. Repetirla con la misma
+    // huella devuelve el resultado ya aplicado (yaAplicada = true).
+    [HttpPost("importacion-nacional/{anio:int}")]
+    [ProducesResponseType(typeof(ConfirmacionImportacionFeriadosResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status503ServiceUnavailable)]
+    public async Task<ActionResult<ConfirmacionImportacionFeriadosResponse>> ConfirmarImportacion(
+        int anio,
+        [FromBody] ConfirmarImportacionFeriadosRequest request,
+        CancellationToken cancellationToken
+    )
+    {
+        var result = await _importacionService.ConfirmarAsync(anio, request, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return CrearRespuestaError(result.Errors);
+        }
+
+        return Ok(result.Value);
+    }
+
+    [HttpGet("importacion-nacional/estado")]
+    [ProducesResponseType(typeof(EstadoCalendarioFeriadosResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<EstadoCalendarioFeriadosResponse>> EstadoImportacion(
+        [FromQuery] int anio,
+        CancellationToken cancellationToken
+    )
+    {
+        var result = await _importacionService.ObtenerEstadoAsync(anio, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return CrearRespuestaError(result.Errors);
+        }
+
+        return Ok(result.Value);
+    }
+
     private ActionResult CrearRespuestaError(IReadOnlyCollection<Error> errors)
     {
         var response = new ApiErrorResponse
@@ -146,9 +216,27 @@ public class DiasInhabilesController : ControllerBase
             return NotFound(response);
         }
 
-        if (errors.Any(x => x.Code == DiaInhabilErrors.FechaDuplicada.Code))
+        if (errors.Any(x =>
+            x.Code == DiaInhabilErrors.FechaDuplicada.Code
+            || x.Code == DiaInhabilErrors.VistaPreviaDesactualizada.Code
+        ))
         {
             return Conflict(response);
+        }
+
+        if (errors.Any(x => x.Code == DiaInhabilErrors.AnioNoDisponible.Code))
+        {
+            return NotFound(response);
+        }
+
+        if (errors.Any(x => x.Code == DiaInhabilErrors.FuenteNoDisponible.Code))
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, response);
+        }
+
+        if (errors.Any(x => x.Code == DiaInhabilErrors.FuenteInvalida.Code))
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, response);
         }
 
         return BadRequest(response);

@@ -5,6 +5,7 @@ using Mantaras.Juridico.Application.Common.Results;
 using Mantaras.Juridico.Application.Features.Agenda;
 using Mantaras.Juridico.Application.Features.Agenda.Requests;
 using Mantaras.Juridico.Application.Features.Agenda.Services;
+using Mantaras.Juridico.Application.Features.DiasInhabiles.Responses;
 using Mantaras.Juridico.Application.Features.Expedientes.Requests;
 using Mantaras.Juridico.Application.Features.Expedientes.Responses;
 using Mantaras.Juridico.Domain.Entities;
@@ -587,6 +588,9 @@ public sealed class ExpedientesService : IExpedientesService
             // Mismo criterio que Agenda: un seguimiento Completado o Cancelado no está vencido.
             SeguimientoVencido = CriteriosAgenda.EstaAbierta(generacion.EntradaAgenda.Estado)
                 && diasParaSeguimiento < 0,
+            Advertencias = AdvertenciaCalendarioResponse.DesdeAnios(
+                generacion.AniosSinCalendario
+            ),
             FechaRegistro = envio.FechaCreacion,
             UsuarioRegistro = envio.UsuarioCreacion,
         };

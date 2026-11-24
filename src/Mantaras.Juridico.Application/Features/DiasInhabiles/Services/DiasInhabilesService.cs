@@ -6,6 +6,7 @@ using Mantaras.Juridico.Application.Common.Results;
 using Mantaras.Juridico.Application.Features.DiasInhabiles.Requests;
 using Mantaras.Juridico.Application.Features.DiasInhabiles.Responses;
 using Mantaras.Juridico.Domain.Entities;
+using Mantaras.Juridico.Domain.Enums;
 
 namespace Mantaras.Juridico.Application.Features.DiasInhabiles.Services;
 
@@ -54,6 +55,7 @@ public class DiasInhabilesService : IDiasInhabilesService
             Fecha = fecha,
             Descripcion = descripcion,
             Activo = true,
+            Origen = OrigenDiaInhabil.Manual,
             FechaCreacion = DateTime.UtcNow,
             UsuarioCreacion = _currentUser.Usuario,
         };
@@ -122,6 +124,7 @@ public class DiasInhabilesService : IDiasInhabilesService
 
         entidad.Fecha = fecha;
         entidad.Descripcion = descripcion;
+        MarcarModificacionManual(entidad);
         entidad.FechaModificacion = DateTime.UtcNow;
         entidad.UsuarioModificacion = _currentUser.Usuario;
 
@@ -199,6 +202,7 @@ public class DiasInhabilesService : IDiasInhabilesService
         }
 
         entidad.Activo = activo;
+        MarcarModificacionManual(entidad);
         entidad.FechaModificacion = DateTime.UtcNow;
         entidad.UsuarioModificacion = _currentUser.Usuario;
 
@@ -207,17 +211,32 @@ public class DiasInhabilesService : IDiasInhabilesService
         return Result<bool>.Success(true);
     }
 
+    // Un feriado importado que el usuario toca deja de sincronizarse con la fuente:
+    // la importación no vuelve a cambiar su fecha, descripción ni activación.
+    private static void MarcarModificacionManual(DiaInhabil entidad)
+    {
+        if (entidad.Origen == OrigenDiaInhabil.FeriadoNacional)
+        {
+            entidad.ModificadoManualmente = true;
+        }
+    }
+
     private static Error ErrorValidacion(ValidationResult validacion) =>
         DiaInhabilErrors.DatosInvalidos(
             string.Join(" ", validacion.Errors.Select(x => x.ErrorMessage).Distinct())
         );
 
-    private static DiaInhabilResponse Mapear(DiaInhabil entidad) => new()
+    internal static DiaInhabilResponse Mapear(DiaInhabil entidad) => new()
     {
         DiaInhabilId = entidad.DiaInhabilId,
         Fecha = entidad.Fecha,
         Descripcion = entidad.Descripcion,
         Activo = entidad.Activo,
+        Origen = entidad.Origen,
+        Fuente = entidad.Fuente,
+        FechaFuente = entidad.FechaFuente,
+        FechaSincronizacion = entidad.FechaSincronizacion,
+        ModificadoManualmente = entidad.ModificadoManualmente,
         FechaCreacion = entidad.FechaCreacion,
         FechaModificacion = entidad.FechaModificacion,
     };

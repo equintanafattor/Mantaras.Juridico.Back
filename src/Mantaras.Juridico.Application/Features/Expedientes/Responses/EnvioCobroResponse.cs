@@ -1,3 +1,4 @@
+using Mantaras.Juridico.Application.Features.DiasInhabiles.Responses;
 using Mantaras.Juridico.Domain.Enums;
 
 namespace Mantaras.Juridico.Application.Features.Expedientes.Responses;
@@ -26,6 +27,10 @@ public sealed class EnvioCobroResponse
 
     // true solo si el seguimiento sigue abierto (no Completada/Cancelada) y FechaSeguimiento ya pasó.
     public bool SeguimientoVencido { get; set; }
+
+    // Años de los 120 días hábiles sin calendario de feriados importado al calcular.
+    public IReadOnlyCollection<AdvertenciaCalendarioResponse> Advertencias { get; set; } =
+        Array.Empty<AdvertenciaCalendarioResponse>();
 
     public DateTime FechaRegistro { get; set; }
 

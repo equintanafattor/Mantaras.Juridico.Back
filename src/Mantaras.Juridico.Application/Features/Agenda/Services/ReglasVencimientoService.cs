@@ -3,6 +3,7 @@ using Mantaras.Juridico.Application.Common.Interfaces;
 using Mantaras.Juridico.Application.Common.Results;
 using Mantaras.Juridico.Application.Features.Agenda.Requests;
 using Mantaras.Juridico.Application.Features.Agenda.Responses;
+using Mantaras.Juridico.Application.Features.DiasInhabiles.Responses;
 using Mantaras.Juridico.Domain.Entities;
 using Mantaras.Juridico.Domain.Enums;
 
@@ -362,6 +363,13 @@ public sealed class ReglasVencimientoService : IReglasVencimientoService
             regla,
             diasInhabiles
         );
+        var aniosSinCalendario = regla.TipoComputo == TipoComputoPlazo.DiasHabiles
+            ? await ObtenerAniosSinCalendarioAsync(
+                request.FechaBase,
+                fechaCalculada,
+                cancellationToken
+            )
+            : Array.Empty<int>();
         var ahora = DateTime.UtcNow;
         var entrada = new EntradaAgenda
         {
@@ -433,6 +441,7 @@ public sealed class ReglasVencimientoService : IReglasVencimientoService
             ObservacionOrigenId = request.ObservacionOrigenId,
             UsuarioGeneracionId = _currentUser.UsuarioId,
             ClaveIdempotencia = claveIdempotencia,
+            AniosSinCalendario = aniosSinCalendario,
             FechaCreacion = ahora,
             UsuarioCreacion = _currentUser.Usuario,
             Activo = true,
@@ -565,6 +574,25 @@ public sealed class ReglasVencimientoService : IReglasVencimientoService
         return null;
     }
 
+    // El cálculo usa solo los días inhábiles guardados. Si algún año del tramo
+    // no tiene calendario importado, la fecha puede caer en un feriado no cargado.
+    private async Task<int[]> ObtenerAniosSinCalendarioAsync(
+        DateOnly fechaBase,
+        DateOnly fechaCalculada,
+        CancellationToken cancellationToken
+    )
+    {
+        var desde = Math.Min(fechaBase.Year, fechaCalculada.Year);
+        var hasta = Math.Max(fechaBase.Year, fechaCalculada.Year);
+        var cargados = await _agendaRepository.ObtenerAniosConCalendarioAsync(
+            desde,
+            hasta,
+            cancellationToken
+        );
+
+        return Enumerable.Range(desde, hasta - desde + 1).Except(cargados).ToArray();
+    }
+
     private static DateOnly CalcularFecha(
         DateOnly fechaBase,
         ReglaVencimiento regla,
@@ -625,6 +653,9 @@ public sealed class ReglasVencimientoService : IReglasVencimientoService
             ExpedienteOrigenId = generacion.ExpedienteOrigenId,
             ObservacionOrigenId = generacion.ObservacionOrigenId,
             ClaveIdempotencia = generacion.ClaveIdempotencia,
+            Advertencias = AdvertenciaCalendarioResponse.DesdeAnios(
+                generacion.AniosSinCalendario
+            ),
             Entrada = entrada!,
         };
     }

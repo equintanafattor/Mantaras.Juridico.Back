@@ -28,6 +28,9 @@ public sealed class AgendaGeneracionReglaConfiguration
         builder.Property(x => x.FechaBase).HasColumnType("date").IsRequired();
         builder.Property(x => x.OrigenFechaBase).HasConversion<int>().IsRequired();
         builder.Property(x => x.ClaveIdempotencia).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.AniosSinCalendario)
+            .HasDefaultValueSql("'{}'::integer[]")
+            .IsRequired();
         builder.Property(x => x.FechaCreacion).IsRequired();
         builder.Property(x => x.UsuarioCreacion).HasMaxLength(100);
         builder.Property(x => x.UsuarioModificacion).HasMaxLength(100);

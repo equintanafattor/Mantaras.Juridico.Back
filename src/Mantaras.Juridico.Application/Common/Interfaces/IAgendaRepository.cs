@@ -91,6 +91,12 @@ public interface IAgendaRepository
         CancellationToken cancellationToken = default
     );
 
+    Task<IReadOnlyCollection<int>> ObtenerAniosConCalendarioAsync(
+        int desde,
+        int hasta,
+        CancellationToken cancellationToken = default
+    );
+
     Task AgregarReglaAsync(
         ReglaVencimiento regla,
         CancellationToken cancellationToken = default

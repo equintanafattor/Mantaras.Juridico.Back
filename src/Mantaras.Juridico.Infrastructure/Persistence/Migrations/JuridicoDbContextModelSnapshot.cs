@@ -35,6 +35,12 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(true);
 
+                    b.Property<int[]>("AniosSinCalendario")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer[]")
+                        .HasDefaultValueSql("'{}'::integer[]");
+
                     b.Property<long?>("CasoOrigenId")
                         .HasColumnType("bigint");
 
@@ -105,6 +111,59 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("CK_AgendaGeneracionesReglas_Origen", "(\"OrigenFechaBase\" = 1 AND num_nonnulls(\"EntradaAgendaOrigenId\", \"CasoOrigenId\", \"ExpedienteOrigenId\", \"ObservacionOrigenId\") = 0) OR (\"OrigenFechaBase\" = 2 AND \"EntradaAgendaOrigenId\" IS NOT NULL AND num_nonnulls(\"CasoOrigenId\", \"ExpedienteOrigenId\", \"ObservacionOrigenId\") = 0) OR (\"OrigenFechaBase\" = 3 AND \"CasoOrigenId\" IS NOT NULL AND num_nonnulls(\"EntradaAgendaOrigenId\", \"ExpedienteOrigenId\", \"ObservacionOrigenId\") = 0) OR (\"OrigenFechaBase\" = 4 AND \"ExpedienteOrigenId\" IS NOT NULL AND num_nonnulls(\"EntradaAgendaOrigenId\", \"CasoOrigenId\", \"ObservacionOrigenId\") = 0) OR (\"OrigenFechaBase\" = 5 AND \"ObservacionOrigenId\" IS NOT NULL AND num_nonnulls(\"EntradaAgendaOrigenId\", \"CasoOrigenId\", \"ExpedienteOrigenId\") = 0)");
                         });
+                });
+
+            modelBuilder.Entity("Mantaras.Juridico.Domain.Entities.CalendarioFeriadosImportado", b =>
+                {
+                    b.Property<int>("Anio")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Actualizados")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Conflictos")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Creados")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Existentes")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FechaPrimeraSincronizacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("FechaPublicacionFuente")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("FechaSincronizacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Fuente")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("RevisionIncluidos")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UltimaClaveConfirmacion")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("UrlFuente")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("UsuarioSincronizacion")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Anio");
+
+                    b.ToTable("CalendariosFeriadosImportados", (string)null);
                 });
 
             modelBuilder.Entity("Mantaras.Juridico.Domain.Entities.Caso", b =>
@@ -342,8 +401,28 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("FechaCreacion")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateOnly?>("FechaFuente")
+                        .HasColumnType("date");
+
                     b.Property<DateTime?>("FechaModificacion")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("FechaSincronizacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Fuente")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("ModificadoManualmente")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("Origen")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
 
                     b.Property<string>("UsuarioCreacion")
                         .HasMaxLength(100)
@@ -359,6 +438,8 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Fecha")
                         .IsUnique();
+
+                    b.HasIndex("FechaFuente");
 
                     b.ToTable("DiasInhabiles", (string)null);
                 });

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text;
 using Mantaras.Juridico.Application.Common.Interfaces;
 using Mantaras.Juridico.Application.Features.Autenticacion.Services;
+using Mantaras.Juridico.Application.Features.DiasInhabiles.Importacion;
 using Mantaras.Juridico.Application.Features.Usuarios.Services;
 using Mantaras.Juridico.Infrastructure.Identity;
 using Mantaras.Juridico.Infrastructure.Persistence;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Mantaras.Juridico.Infrastructure;
@@ -154,6 +156,15 @@ public static class DependencyInjection
         services.AddHttpContextAccessor();
         services.AddScoped<IAgendaRepository, AgendaRepository>();
         services.AddScoped<IDiaInhabilRepository, DiaInhabilRepository>();
+        services.Configure<FeriadosNacionalesOptions>(
+            configuration.GetSection(FeriadosNacionalesOptions.SectionName)
+        );
+        services.AddHttpClient<IFuenteFeriadosNacionales, FuenteFeriadosArgentinaGobAr>(
+            (serviceProvider, httpClient) => FuenteFeriadosArgentinaGobAr.Configurar(
+                httpClient,
+                serviceProvider.GetRequiredService<IOptions<FeriadosNacionalesOptions>>().Value
+            )
+        );
         services.AddScoped<ITipoEntradaAgendaRepository, TipoEntradaAgendaRepository>();
         services.AddScoped<
             IRecordatoriosAgendaRepository,

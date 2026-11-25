@@ -684,9 +684,8 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("FechaModificacion")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Juzgado")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                    b.Property<long?>("JuzgadoId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("NumeroExpediente")
                         .HasMaxLength(100)
@@ -712,6 +711,8 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                     b.HasKey("ExpedienteId");
 
                     b.HasIndex("ExpedientePadreId");
+
+                    b.HasIndex("JuzgadoId");
 
                     b.HasIndex("NumeroExpediente");
 
@@ -801,6 +802,46 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("CK_HojasResumenCasos_PeriodoMovilidad", "(\r\n    \"MovilidadActualizacionMes\" IS NULL\r\n    AND \"MovilidadActualizacionAnio\" IS NULL\r\n)\r\nOR\r\n(\r\n    \"MovilidadActualizacionMes\" IS NOT NULL\r\n    AND \"MovilidadActualizacionAnio\" IS NOT NULL\r\n    AND \"MovilidadActualizacionMes\" BETWEEN 1 AND 12\r\n    AND \"MovilidadActualizacionAnio\" BETWEEN 1 AND 9999\r\n)");
                         });
+                });
+
+            modelBuilder.Entity("Mantaras.Juridico.Domain.Entities.Juzgado", b =>
+                {
+                    b.Property<long>("JuzgadoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("JuzgadoId"));
+
+                    b.Property<bool>("Activo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("FechaModificacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("UsuarioCreacion")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("UsuarioModificacion")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("JuzgadoId");
+
+                    b.HasIndex("Nombre")
+                        .IsUnique();
+
+                    b.ToTable("Juzgados", (string)null);
                 });
 
             modelBuilder.Entity("Mantaras.Juridico.Domain.Entities.Observacion", b =>
@@ -1909,7 +1950,14 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ExpedientePadreId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("Mantaras.Juridico.Domain.Entities.Juzgado", "Juzgado")
+                        .WithMany("Expedientes")
+                        .HasForeignKey("JuzgadoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("ExpedientePadre");
+
+                    b.Navigation("Juzgado");
                 });
 
             modelBuilder.Entity("Mantaras.Juridico.Domain.Entities.HojaResumenCaso", b =>
@@ -2114,6 +2162,11 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                     b.Navigation("ExpedientesDerivados");
 
                     b.Navigation("HistorialObservaciones");
+                });
+
+            modelBuilder.Entity("Mantaras.Juridico.Domain.Entities.Juzgado", b =>
+                {
+                    b.Navigation("Expedientes");
                 });
 
             modelBuilder.Entity("Mantaras.Juridico.Domain.Entities.RecurrenciaAgenda", b =>

@@ -145,7 +145,7 @@ function Comprobar-CasoEnCliente {
     foreach ($exp in $esperados) {
         $coincidentes = @($recibidos | Where-Object { $_.expedienteId -eq $exp.expedienteId })
         Comprobar "$Etiqueta / expediente $($exp.expedienteId) conservado" ($coincidentes.Count -eq 1)
-        foreach ($campo in @("expedientePadreId", "numeroExpediente", "caratula", "juzgado", "fechaInicio", "estadoLegal", "activo")) {
+        foreach ($campo in @("expedientePadreId", "numeroExpediente", "caratula", "juzgadoId", "juzgadoNombre", "juzgadoActivo", "fechaInicio", "estadoLegal", "activo")) {
             Comprobar "$Etiqueta / expediente $campo" ($coincidentes[0].PSObject.Properties.Name -contains $campo -and $coincidentes[0].$campo -ceq $exp.$campo)
         }
     }
@@ -166,7 +166,7 @@ function Con-Expediente {
         caso = $Caso
         expediente = @{
             numeroExpediente = "JUD-" + [Guid]::NewGuid().ToString("N")
-            caratula = "$prefijo PRINCIPAL"; juzgado = "PRUEBA"
+            caratula = "$prefijo PRINCIPAL"; juzgadoId = $null
             fechaInicio = $null; estadoLegal = $null
         }
     }

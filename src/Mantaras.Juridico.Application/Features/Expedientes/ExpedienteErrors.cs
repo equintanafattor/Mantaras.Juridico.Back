@@ -39,6 +39,16 @@ public static class ExpedienteErrors
         "No se puede dar de baja el expediente porque tiene expedientes derivados activos."
     );
 
+    public static readonly Error JuzgadoNoEncontrado = new(
+        "Expedientes.JuzgadoNoEncontrado",
+        "El juzgado informado no existe."
+    );
+
+    public static readonly Error JuzgadoInactivo = new(
+        "Expedientes.JuzgadoInactivo",
+        "No se puede asignar un juzgado inactivo."
+    );
+
     public static readonly Error PrincipalDuplicado = new(
         "Expedientes.PrincipalDuplicado",
         "El caso ya tiene un expediente principal."

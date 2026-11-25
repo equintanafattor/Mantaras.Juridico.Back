@@ -38,6 +38,7 @@ public sealed class CasoRepository : ICasoRepository
                 .ThenInclude(x => x.Cliente)
             .Include(x => x.Expedientes)
                 .ThenInclude(x => x.Expediente)
+                    .ThenInclude(x => x.Juzgado)
             .FirstOrDefaultAsync(x => x.CasoId == casoId, cancellationToken);
     }
 

@@ -21,6 +21,7 @@ public sealed class ExpedienteRepository : IExpedienteRepository
     {
         return _dbContext
             .Expedientes
+            .Include(x => x.Juzgado)
             .Include(x => x.Casos)
                 .ThenInclude(x => x.Caso)
                     .ThenInclude(x => x.TipoBeneficio)
@@ -40,6 +41,7 @@ public sealed class ExpedienteRepository : IExpedienteRepository
     {
         return _dbContext
             .Expedientes.AsNoTracking()
+            .Include(x => x.Juzgado)
             .Include(x => x.Casos)
                 .ThenInclude(x => x.Caso)
                     .ThenInclude(x => x.TipoBeneficio)
@@ -81,6 +83,7 @@ public sealed class ExpedienteRepository : IExpedienteRepository
         );
 
         return await query
+            .Include(x => x.Juzgado)
             .Include(x => x.Casos)
                 .ThenInclude(x => x.Caso)
                     .ThenInclude(x => x.TipoBeneficio)
@@ -125,6 +128,7 @@ public sealed class ExpedienteRepository : IExpedienteRepository
             seguimientoVencido,
             fechaActual
         )
+            .Include(x => x.Juzgado)
             .Include(x => x.Casos)
                 .ThenInclude(x => x.Caso)
                     .ThenInclude(x => x.TipoBeneficio)
@@ -274,7 +278,7 @@ public sealed class ExpedienteRepository : IExpedienteRepository
                 || (
                     x.Juzgado != null
                     && EF.Functions.ILike(
-                        x.Juzgado,
+                        x.Juzgado.Nombre,
                         $"%{termino}%"
                     )
                 )

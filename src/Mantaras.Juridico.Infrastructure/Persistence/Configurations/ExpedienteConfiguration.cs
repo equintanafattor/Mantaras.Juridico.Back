@@ -17,8 +17,6 @@ public class ExpedienteConfiguration : IEntityTypeConfiguration<Expediente>
 
         builder.Property(x => x.Caratula).HasMaxLength(1000).IsRequired();
 
-        builder.Property(x => x.Juzgado).HasMaxLength(500);
-
         builder.Property(x => x.EstadoLegal).HasMaxLength(200);
 
         builder.Property(x => x.TipoTramite).HasMaxLength(200);
@@ -28,6 +26,15 @@ public class ExpedienteConfiguration : IEntityTypeConfiguration<Expediente>
         builder.HasIndex(x => x.NumeroExpediente);
 
         builder.HasIndex(x => x.ExpedientePadreId);
+
+        builder.HasIndex(x => x.JuzgadoId);
+
+        // Restrict: un juzgado con expedientes vinculados solo se da de baja lógicamente.
+        builder
+            .HasOne(x => x.Juzgado)
+            .WithMany(x => x.Expedientes)
+            .HasForeignKey(x => x.JuzgadoId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder
             .Property(x => x.TipoExpediente)

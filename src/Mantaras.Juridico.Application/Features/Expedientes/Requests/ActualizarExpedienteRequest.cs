@@ -14,7 +14,20 @@ public sealed class ActualizarExpedienteRequest
 
     public string Caratula { get; set; } = string.Empty;
 
-    public string? Juzgado { get; set; }
+    private long? _juzgadoId;
+
+    // Omitido: conserva el juzgado actual. null: desvincula. Valor: vincula ese juzgado.
+    public long? JuzgadoId
+    {
+        get => _juzgadoId;
+        set
+        {
+            _juzgadoId = value;
+            JuzgadoIdInformado = true;
+        }
+    }
+
+    internal bool JuzgadoIdInformado { get; private set; }
 
     public DateOnly? FechaInicio { get; set; }
 

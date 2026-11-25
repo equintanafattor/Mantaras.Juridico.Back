@@ -179,6 +179,7 @@ public static class DependencyInjection
         services.AddScoped<IObservacionRepository, ObservacionRepository>();
 
         services.AddScoped<ITipoBeneficioRepository, TipoBeneficioRepository>();
+        services.AddScoped<IJuzgadoRepository, JuzgadoRepository>();
         services.AddScoped<IOpcionCatalogoRepository, OpcionCatalogoRepository>();
         services.AddScoped<ITipoExpedienteAdministrativoRepository, TipoExpedienteAdministrativoRepository>();
 

@@ -36,6 +36,7 @@ public class ClienteRepository : IClienteRepository
                 .ThenInclude(casoCliente => casoCliente.Caso)
                 .ThenInclude(caso => caso.Expedientes)
                     .ThenInclude(relacion => relacion.Expediente)
+                        .ThenInclude(expediente => expediente.Juzgado)
             .Include(cliente => cliente.Casos)
                 .ThenInclude(casoCliente => casoCliente.Caso)
                     .ThenInclude(caso => caso.TipoBeneficio)

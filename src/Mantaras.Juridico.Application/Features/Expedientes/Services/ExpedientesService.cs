@@ -8,6 +8,7 @@ using Mantaras.Juridico.Application.Features.Agenda.Services;
 using Mantaras.Juridico.Application.Features.DiasInhabiles.Responses;
 using Mantaras.Juridico.Application.Features.Expedientes.Requests;
 using Mantaras.Juridico.Application.Features.Expedientes.Responses;
+using Mantaras.Juridico.Application.Features.Juzgados.Common;
 using Mantaras.Juridico.Domain.Entities;
 using Mantaras.Juridico.Domain.Enums;
 
@@ -17,18 +18,21 @@ public sealed class ExpedientesService : IExpedientesService
 {
     private readonly IExpedienteRepository _expedienteRepository;
     private readonly ICasoRepository _casoRepository;
+    private readonly IJuzgadoRepository _juzgadoRepository;
     private readonly IReglasVencimientoService _reglasVencimientoService;
     private readonly ICurrentUserService _currentUser;
 
     public ExpedientesService(
         IExpedienteRepository expedienteRepository,
         ICasoRepository casoRepository,
+        IJuzgadoRepository juzgadoRepository,
         IReglasVencimientoService reglasVencimientoService,
         ICurrentUserService currentUser
     )
     {
         _expedienteRepository = expedienteRepository;
         _casoRepository = casoRepository;
+        _juzgadoRepository = juzgadoRepository;
         _reglasVencimientoService = reglasVencimientoService;
         _currentUser = currentUser;
     }
@@ -83,13 +87,26 @@ public sealed class ExpedientesService : IExpedientesService
             return Result<ExpedienteResponse>.Failure(ExpedienteErrors.PadreDeOtroCaso);
         }
 
+        var juzgadoResult = await AsignacionJuzgado.ResolverAsync(
+            _juzgadoRepository,
+            request.JuzgadoId,
+            null,
+            cancellationToken
+        );
+
+        if (juzgadoResult.Error is { } errorJuzgado)
+        {
+            return Result<ExpedienteResponse>.Failure(errorJuzgado);
+        }
+
         var expediente = new Expediente
         {
             ExpedientePadreId = padreResult.Padre?.ExpedienteId,
             TipoExpediente = request.TipoExpediente,
             NumeroExpediente = NormalizarOpcional(request.NumeroExpediente),
             Caratula = request.Caratula.Trim(),
-            Juzgado = NormalizarOpcional(request.Juzgado),
+            JuzgadoId = juzgadoResult.Juzgado?.JuzgadoId,
+            Juzgado = juzgadoResult.Juzgado,
             FechaInicio = request.FechaInicio,
             EstadoLegal = NormalizarOpcional(request.EstadoLegal),
             TipoTramite = NormalizarOpcional(request.TipoTramite),
@@ -253,12 +270,29 @@ public sealed class ExpedientesService : IExpedientesService
             return Result<ExpedienteResponse>.Failure(ExpedienteErrors.PadreDeOtroCaso);
         }
 
+        var juzgadoId = request.JuzgadoIdInformado
+            ? request.JuzgadoId
+            : expediente.JuzgadoId;
+
+        var juzgadoResult = await AsignacionJuzgado.ResolverAsync(
+            _juzgadoRepository,
+            juzgadoId,
+            expediente.JuzgadoId,
+            cancellationToken
+        );
+
+        if (juzgadoResult.Error is { } errorJuzgado)
+        {
+            return Result<ExpedienteResponse>.Failure(errorJuzgado);
+        }
+
         expediente.ExpedientePadreId = padreResult.Padre?.ExpedienteId;
         expediente.ExpedientePadre = padreResult.Padre;
         expediente.TipoExpediente = request.TipoExpediente;
         expediente.NumeroExpediente = NormalizarOpcional(request.NumeroExpediente);
         expediente.Caratula = request.Caratula.Trim();
-        expediente.Juzgado = NormalizarOpcional(request.Juzgado);
+        expediente.JuzgadoId = juzgadoResult.Juzgado?.JuzgadoId;
+        expediente.Juzgado = juzgadoResult.Juzgado;
         expediente.FechaInicio = request.FechaInicio;
         expediente.EstadoLegal = NormalizarOpcional(request.EstadoLegal);
         expediente.TipoTramite = NormalizarOpcional(request.TipoTramite);
@@ -346,7 +380,9 @@ public sealed class ExpedientesService : IExpedientesService
                     TipoExpediente = expediente.TipoExpediente,
                     NumeroExpediente = expediente.NumeroExpediente,
                     Caratula = expediente.Caratula,
-                    Juzgado = expediente.Juzgado,
+                    JuzgadoId = expediente.JuzgadoId,
+                    JuzgadoNombre = expediente.Juzgado?.Nombre,
+                    JuzgadoActivo = expediente.Juzgado?.Activo,
                     EstadoLegal = expediente.EstadoLegal,
                     Activo = expediente.Activo,
                     EnvioCobro = MapearEnvioCobro(expediente, fechaActual)!,
@@ -671,7 +707,9 @@ public sealed class ExpedientesService : IExpedientesService
             TipoExpediente = expediente.TipoExpediente,
             NumeroExpediente = expediente.NumeroExpediente,
             Caratula = expediente.Caratula,
-            Juzgado = expediente.Juzgado,
+            JuzgadoId = expediente.JuzgadoId,
+            JuzgadoNombre = expediente.Juzgado?.Nombre,
+            JuzgadoActivo = expediente.Juzgado?.Activo,
             FechaInicio = expediente.FechaInicio,
             EstadoLegal = expediente.EstadoLegal,
             TipoTramite = expediente.TipoTramite,
@@ -700,7 +738,9 @@ public sealed class ExpedientesService : IExpedientesService
             TipoExpediente = expediente.TipoExpediente,
             NumeroExpediente = expediente.NumeroExpediente,
             Caratula = expediente.Caratula,
-            Juzgado = expediente.Juzgado,
+            JuzgadoId = expediente.JuzgadoId,
+            JuzgadoNombre = expediente.Juzgado?.Nombre,
+            JuzgadoActivo = expediente.Juzgado?.Activo,
             FechaInicio = expediente.FechaInicio,
             EstadoLegal = expediente.EstadoLegal,
             TipoTramite = expediente.TipoTramite,

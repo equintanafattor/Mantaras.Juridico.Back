@@ -17,7 +17,11 @@ public sealed class ExpedienteResponse
 
     public string Caratula { get; set; } = string.Empty;
 
-    public string? Juzgado { get; set; }
+    public long? JuzgadoId { get; set; }
+
+    public string? JuzgadoNombre { get; set; }
+
+    public bool? JuzgadoActivo { get; set; }
 
     public DateOnly? FechaInicio { get; set; }
 

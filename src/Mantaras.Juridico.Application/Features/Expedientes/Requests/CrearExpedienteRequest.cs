@@ -14,7 +14,7 @@ public sealed class CrearExpedienteRequest
 
     public string Caratula { get; set; } = string.Empty;
 
-    public string? Juzgado { get; set; }
+    public long? JuzgadoId { get; set; }
 
     public DateOnly? FechaInicio { get; set; }
 

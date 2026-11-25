@@ -22,9 +22,10 @@ public sealed class CrearExpedientePrincipalRequestValidator
                 "La carátula no puede superar los 1000 caracteres."
             );
 
-        RuleFor(x => x.Juzgado)
-            .MaximumLength(500)
-            .WithMessage("El juzgado no puede superar los 500 caracteres.");
+        RuleFor(x => x.JuzgadoId)
+            .GreaterThan(0)
+            .When(x => x.JuzgadoId.HasValue)
+            .WithMessage("El juzgado informado no es válido.");
 
         RuleFor(x => x.TipoTramite)
             .MaximumLength(200)

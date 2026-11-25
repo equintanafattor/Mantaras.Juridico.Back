@@ -9,7 +9,8 @@ public class Expediente : AuditableEntity
     public long? ExpedientePadreId { get; set; }
     public string? NumeroExpediente { get; set; }
     public string Caratula { get; set; } = null!;
-    public string? Juzgado { get; set; }
+    public long? JuzgadoId { get; set; }
+    public Juzgado? Juzgado { get; set; }
     public DateOnly? FechaInicio { get; set; }
     public string? EstadoLegal { get; set; }
 

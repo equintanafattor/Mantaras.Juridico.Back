@@ -30,6 +30,8 @@ public class JuridicoDbContext : IdentityDbContext<UsuarioIdentity, IdentityRole
 
     public DbSet<TipoBeneficio> TiposBeneficio => Set<TipoBeneficio>();
 
+    public DbSet<Juzgado> Juzgados => Set<Juzgado>();
+
     public DbSet<TipoExpedienteAdministrativo> TiposExpedienteAdministrativo =>
         Set<TipoExpedienteAdministrativo>();
 

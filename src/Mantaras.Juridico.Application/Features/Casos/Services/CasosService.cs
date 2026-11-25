@@ -3,6 +3,7 @@ using Mantaras.Juridico.Application.Common.Pagination;
 using Mantaras.Juridico.Application.Common.Results;
 using Mantaras.Juridico.Application.Features.Casos.Requests;
 using Mantaras.Juridico.Application.Features.Casos.Responses;
+using Mantaras.Juridico.Application.Features.Juzgados.Common;
 using Mantaras.Juridico.Domain.Entities;
 using Mantaras.Juridico.Domain.Enums;
 
@@ -15,13 +16,15 @@ public sealed class CasosService : ICasosService
     private readonly ICurrentUserService _currentUser;
     private readonly ITipoBeneficioRepository _tipoBeneficioRepository;
     private readonly ITipoExpedienteAdministrativoRepository _tipoAdministrativoRepository;
+    private readonly IJuzgadoRepository _juzgadoRepository;
 
     public CasosService(
         ICasoRepository casoRepository,
         IClienteRepository clienteRepository,
         ICurrentUserService currentUser,
         ITipoBeneficioRepository tipoBeneficioRepository,
-        ITipoExpedienteAdministrativoRepository tipoAdministrativoRepository
+        ITipoExpedienteAdministrativoRepository tipoAdministrativoRepository,
+        IJuzgadoRepository juzgadoRepository
     )
     {
         _casoRepository = casoRepository;
@@ -29,6 +32,7 @@ public sealed class CasosService : ICasosService
         _currentUser = currentUser;
         _tipoBeneficioRepository = tipoBeneficioRepository;
         _tipoAdministrativoRepository = tipoAdministrativoRepository;
+        _juzgadoRepository = juzgadoRepository;
     }
 
     public async Task<Result<CasoResponse>> CrearAsync(
@@ -117,6 +121,18 @@ public sealed class CasosService : ICasosService
             return Result<CrearCasoConExpedientePrincipalResponse>.Failure(error);
         }
 
+        var juzgadoResult = await AsignacionJuzgado.ResolverAsync(
+            _juzgadoRepository,
+            request.Expediente.JuzgadoId,
+            null,
+            cancellationToken
+        );
+
+        if (juzgadoResult.Error is { } errorJuzgado)
+        {
+            return Result<CrearCasoConExpedientePrincipalResponse>.Failure(errorJuzgado);
+        }
+
         var caso = ConstruirCaso(
             request.Caso,
             clientesPorId,
@@ -133,7 +149,8 @@ public sealed class CasosService : ICasosService
                 request.Expediente.NumeroExpediente
             ),
             Caratula = request.Expediente.Caratula.Trim(),
-            Juzgado = NormalizarOpcional(request.Expediente.Juzgado),
+            JuzgadoId = juzgadoResult.Juzgado?.JuzgadoId,
+            Juzgado = juzgadoResult.Juzgado,
             TipoTramite = NormalizarOpcional(request.Expediente.TipoTramite),
             FechaInicio = request.Expediente.FechaInicio,
             EstadoLegal = NormalizarOpcional(
@@ -499,7 +516,9 @@ public sealed class CasosService : ICasosService
                     ExpedientePadreId = x.ExpedientePadreId,
                     NumeroExpediente = x.NumeroExpediente,
                     Caratula = x.Caratula,
-                    Juzgado = x.Juzgado,
+                    JuzgadoId = x.JuzgadoId,
+                    JuzgadoNombre = x.Juzgado?.Nombre,
+                    JuzgadoActivo = x.Juzgado?.Activo,
                     FechaInicio = x.FechaInicio,
                     EstadoLegal = x.EstadoLegal,
                     Activo = x.Activo,

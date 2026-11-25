@@ -32,7 +32,7 @@ Se agrega el campo opcional `envioCobro` al body actual:
   "expedientePadreId": null,
   "numeroExpediente": "J-1",
   "caratula": "Pérez c/ ANSES",
-  "juzgado": null,
+  "juzgadoId": null,
   "fechaInicio": null,
   "estadoLegal": null,
   "tipoTramite": null,
@@ -94,7 +94,7 @@ Query params:
 
 | Param | Default | Descripción |
 |---|---|---|
-| `busqueda` | — | La misma búsqueda que `GET /api/expedientes`: número, carátula, juzgado, estado legal, observaciones, administrativo y cliente. |
+| `busqueda` | — | La misma búsqueda que `GET /api/expedientes`: número, carátula, nombre del juzgado, estado legal, observaciones, administrativo y cliente. |
 | `soloActivos` | `true` | Excluye los judiciales dados de baja. |
 | `seguimientoVencido` | — | `true`: solo vencidos. `false`: solo no vencidos. Omitido: todos. |
 | `page` / `pageSize` | `1` / `20` | Máximo 100 por página. |
@@ -110,7 +110,9 @@ Está ordenado por `fechaSeguimiento`, de la más próxima o vencida a la más l
       "tipoExpediente": "Principal",
       "numeroExpediente": "J-2",
       "caratula": "…",
-      "juzgado": null,
+      "juzgadoId": null,
+      "juzgadoNombre": null,
+      "juzgadoActivo": null,
       "estadoLegal": null,
       "activo": true,
       "envioCobro": { "…": "misma forma que en el punto 2" }

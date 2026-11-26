@@ -375,19 +375,27 @@ public sealed class ExpedientesService : IExpedientesService
         return new PagedResponse<ExpedienteCobroResponse>
         {
             Items = expedientes
-                .Select(expediente => new ExpedienteCobroResponse
+                .Select(expediente =>
                 {
-                    ExpedienteId = expediente.ExpedienteId,
-                    Casos = MapearCasos(expediente),
-                    TipoExpediente = expediente.TipoExpediente,
-                    NumeroExpediente = expediente.NumeroExpediente,
-                    Caratula = expediente.Caratula,
-                    JuzgadoId = expediente.JuzgadoId,
-                    JuzgadoNombre = expediente.Juzgado?.Nombre,
-                    JuzgadoActivo = expediente.Juzgado?.Activo,
-                    EstadoLegal = expediente.EstadoLegal,
-                    Activo = expediente.Activo,
-                    EnvioCobro = MapearEnvioCobro(expediente, fechaActual)!,
+                    var (clientes, clientePrincipalId) =
+                        ClientesExpedienteCobro.Resolver(expediente);
+
+                    return new ExpedienteCobroResponse
+                    {
+                        ExpedienteId = expediente.ExpedienteId,
+                        Casos = MapearCasos(expediente),
+                        Clientes = clientes,
+                        ClientePrincipalId = clientePrincipalId,
+                        TipoExpediente = expediente.TipoExpediente,
+                        NumeroExpediente = expediente.NumeroExpediente,
+                        Caratula = expediente.Caratula,
+                        JuzgadoId = expediente.JuzgadoId,
+                        JuzgadoNombre = expediente.Juzgado?.Nombre,
+                        JuzgadoActivo = expediente.Juzgado?.Activo,
+                        EstadoLegal = expediente.EstadoLegal,
+                        Activo = expediente.Activo,
+                        EnvioCobro = MapearEnvioCobro(expediente, fechaActual)!,
+                    };
                 })
                 .ToArray(),
             Page = request.Page,

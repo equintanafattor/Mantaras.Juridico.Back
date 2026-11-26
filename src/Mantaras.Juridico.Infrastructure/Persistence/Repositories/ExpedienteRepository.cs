@@ -136,6 +136,11 @@ public sealed class ExpedienteRepository : IExpedienteRepository
             .Include(x => x.Casos)
                 .ThenInclude(x => x.Caso)
                     .ThenInclude(x => x.TipoBeneficio)
+            // Clientes de los casos para resolver el cliente principal, en la misma consulta.
+            .Include(x => x.Casos)
+                .ThenInclude(x => x.Caso)
+                    .ThenInclude(x => x.Clientes)
+                        .ThenInclude(x => x.Cliente)
             .Include(x => x.EnviosCobro.Where(envio => envio.Activo))
                 .ThenInclude(x => x.AgendaGeneracionRegla)
                     .ThenInclude(x => x.EntradaAgenda)

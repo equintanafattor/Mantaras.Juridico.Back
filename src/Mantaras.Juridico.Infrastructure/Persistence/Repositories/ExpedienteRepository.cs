@@ -69,6 +69,7 @@ public sealed class ExpedienteRepository : IExpedienteRepository
 
     public async Task<IReadOnlyCollection<Expediente>> BuscarAsync(
         long? casoId,
+        long? juzgadoId,
         string? busqueda,
         bool soloActivos,
         int page,
@@ -78,6 +79,7 @@ public sealed class ExpedienteRepository : IExpedienteRepository
     {
         var query = ConstruirConsulta(
             casoId,
+            juzgadoId,
             busqueda,
             soloActivos
         );
@@ -100,6 +102,7 @@ public sealed class ExpedienteRepository : IExpedienteRepository
 
     public Task<int> ContarAsync(
         long? casoId,
+        long? juzgadoId,
         string? busqueda,
         bool soloActivos,
         CancellationToken cancellationToken = default
@@ -107,6 +110,7 @@ public sealed class ExpedienteRepository : IExpedienteRepository
     {
         return ConstruirConsulta(
             casoId,
+            juzgadoId,
             busqueda,
             soloActivos
         ).CountAsync(cancellationToken);
@@ -213,7 +217,7 @@ public sealed class ExpedienteRepository : IExpedienteRepository
         DateOnly fechaActual
     )
     {
-        var query = ConstruirConsulta(null, busqueda, soloActivos);
+        var query = ConstruirConsulta(null, null, busqueda, soloActivos);
 
         return seguimientoVencido switch
         {
@@ -241,6 +245,7 @@ public sealed class ExpedienteRepository : IExpedienteRepository
 
     private IQueryable<Expediente> ConstruirConsulta(
         long? casoId,
+        long? juzgadoId,
         string? busqueda,
         bool soloActivos
     )
@@ -257,6 +262,13 @@ public sealed class ExpedienteRepository : IExpedienteRepository
             query = query.Where(x =>
                 x.Casos.Any(relacion => relacion.CasoId == casoId.Value)
             );
+        }
+
+        // Por identificador, sin mirar si el juzgado está activo: un juzgado dado
+        // de baja conserva sus expedientes y se puede seguir consultando.
+        if (juzgadoId.HasValue)
+        {
+            query = query.Where(x => x.JuzgadoId == juzgadoId.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(busqueda))

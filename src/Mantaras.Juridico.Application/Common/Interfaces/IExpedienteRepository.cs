@@ -21,6 +21,7 @@ public interface IExpedienteRepository
 
     Task<IReadOnlyCollection<Expediente>> BuscarAsync(
         long? casoId,
+        long? juzgadoId,
         string? busqueda,
         bool soloActivos,
         int page,
@@ -30,6 +31,7 @@ public interface IExpedienteRepository
 
     Task<int> ContarAsync(
         long? casoId,
+        long? juzgadoId,
         string? busqueda,
         bool soloActivos,
         CancellationToken cancellationToken = default

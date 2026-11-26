@@ -156,6 +156,7 @@ public sealed class ExpedientesService : IExpedientesService
     {
         var expedientes = await _expedienteRepository.BuscarAsync(
             request.CasoId,
+            request.JuzgadoId,
             request.Busqueda,
             request.SoloActivos,
             request.Page,
@@ -165,6 +166,7 @@ public sealed class ExpedientesService : IExpedientesService
 
         var totalItems = await _expedienteRepository.ContarAsync(
             request.CasoId,
+            request.JuzgadoId,
             request.Busqueda,
             request.SoloActivos,
             cancellationToken

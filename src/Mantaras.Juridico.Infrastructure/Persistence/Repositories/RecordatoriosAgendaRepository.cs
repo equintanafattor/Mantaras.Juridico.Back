@@ -24,6 +24,8 @@ public sealed class RecordatoriosAgendaRepository
         var query = _dbContext.RecordatoriosAgenda
             .Include(x => x.EntradaAgenda)
                 .ThenInclude(x => x.TipoEntrada)
+            .Include(x => x.TipoEntradaAgendaOrigen)
+            .Include(x => x.ReglaVencimientoOrigen)
             .AsQueryable();
 
         if (!seguimiento)
@@ -68,6 +70,8 @@ public sealed class RecordatoriosAgendaRepository
         return await ConstruirConsulta(entradaAgendaId, estado, soloEntradasAbiertas)
             .Include(x => x.EntradaAgenda)
                 .ThenInclude(x => x.TipoEntrada)
+            .Include(x => x.TipoEntradaAgendaOrigen)
+            .Include(x => x.ReglaVencimientoOrigen)
             .OrderBy(x => x.Atendido)
             .ThenBy(x => x.FechaProgramadaUtc)
             .ThenBy(x => x.RecordatorioAgendaId)

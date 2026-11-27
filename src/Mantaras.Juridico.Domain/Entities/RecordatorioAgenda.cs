@@ -19,5 +19,18 @@ public sealed class RecordatorioAgenda : AuditableEntity
 
     public long? UsuarioAtendioId { get; set; }
 
+    // Procedencia registrada al crear el aviso. No cambia al reprogramar ni al atender.
+    public OrigenRecordatorioAgenda Origen { get; set; }
+
+    // Solo con Origen = Categoria.
+    public long? TipoEntradaAgendaOrigenId { get; set; }
+
+    // Solo con Origen = Regla.
+    public long? ReglaVencimientoOrigenId { get; set; }
+
     public EntradaAgenda EntradaAgenda { get; set; } = null!;
+
+    public TipoEntradaAgenda? TipoEntradaAgendaOrigen { get; set; }
+
+    public ReglaVencimiento? ReglaVencimientoOrigen { get; set; }
 }

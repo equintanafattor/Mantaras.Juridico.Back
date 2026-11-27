@@ -84,6 +84,7 @@ public sealed class RecordatoriosAgendaService : IRecordatoriosAgendaService
             Canal = CanalRecordatorioAgenda.Interno,
             FechaProgramadaUtc = fechaProgramadaUtc,
             Atendido = false,
+            Origen = OrigenRecordatorioAgenda.Manual,
             FechaCreacion = DateTime.UtcNow,
             UsuarioCreacion = _currentUser.Usuario,
             Activo = true,
@@ -272,6 +273,19 @@ public sealed class RecordatoriosAgendaService : IRecordatoriosAgendaService
             Atendido = recordatorio.Atendido,
             FechaAtendidoUtc = recordatorio.FechaAtendidoUtc,
             UsuarioAtendioId = recordatorio.UsuarioAtendioId,
+            Origen = recordatorio.Origen,
+            OrigenId = recordatorio.Origen switch
+            {
+                OrigenRecordatorioAgenda.Categoria => recordatorio.TipoEntradaAgendaOrigenId,
+                OrigenRecordatorioAgenda.Regla => recordatorio.ReglaVencimientoOrigenId,
+                _ => null,
+            },
+            OrigenNombre = recordatorio.Origen switch
+            {
+                OrigenRecordatorioAgenda.Categoria => recordatorio.TipoEntradaAgendaOrigen?.Nombre,
+                OrigenRecordatorioAgenda.Regla => recordatorio.ReglaVencimientoOrigen?.Nombre,
+                _ => null,
+            },
             FechaCreacion = recordatorio.FechaCreacion,
             Activo = recordatorio.Activo,
         };

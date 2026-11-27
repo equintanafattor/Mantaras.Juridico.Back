@@ -1004,6 +1004,15 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("FechaProgramadaUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("Origen")
+                        .HasColumnType("integer");
+
+                    b.Property<long?>("ReglaVencimientoOrigenId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("TipoEntradaAgendaOrigenId")
+                        .HasColumnType("bigint");
+
                     b.Property<long?>("UsuarioAtendioId")
                         .HasColumnType("bigint");
 
@@ -1019,11 +1028,18 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("EntradaAgendaId");
 
+                    b.HasIndex("ReglaVencimientoOrigenId");
+
+                    b.HasIndex("TipoEntradaAgendaOrigenId");
+
                     b.HasIndex("UsuarioAtendioId");
 
                     b.HasIndex("FechaProgramadaUtc", "Atendido", "Activo");
 
-                    b.ToTable("RecordatoriosAgenda", (string)null);
+                    b.ToTable("RecordatoriosAgenda", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RecordatoriosAgenda_Origen", "(\"Origen\" IN (0, 1) AND num_nonnulls(\"TipoEntradaAgendaOrigenId\", \"ReglaVencimientoOrigenId\") = 0) OR (\"Origen\" = 2 AND \"TipoEntradaAgendaOrigenId\" IS NOT NULL AND \"ReglaVencimientoOrigenId\" IS NULL) OR (\"Origen\" = 3 AND \"ReglaVencimientoOrigenId\" IS NOT NULL AND \"TipoEntradaAgendaOrigenId\" IS NULL)");
+                        });
                 });
 
             modelBuilder.Entity("Mantaras.Juridico.Domain.Entities.RecordatorioPredeterminadoReglaVencimiento", b =>
@@ -2003,12 +2019,26 @@ namespace Mantaras.Juridico.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Mantaras.Juridico.Domain.Entities.ReglaVencimiento", "ReglaVencimientoOrigen")
+                        .WithMany()
+                        .HasForeignKey("ReglaVencimientoOrigenId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Mantaras.Juridico.Domain.Entities.TipoEntradaAgenda", "TipoEntradaAgendaOrigen")
+                        .WithMany()
+                        .HasForeignKey("TipoEntradaAgendaOrigenId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Mantaras.Juridico.Infrastructure.Identity.UsuarioIdentity", null)
                         .WithMany()
                         .HasForeignKey("UsuarioAtendioId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("EntradaAgenda");
+
+                    b.Navigation("ReglaVencimientoOrigen");
+
+                    b.Navigation("TipoEntradaAgendaOrigen");
                 });
 
             modelBuilder.Entity("Mantaras.Juridico.Domain.Entities.RecordatorioPredeterminadoReglaVencimiento", b =>

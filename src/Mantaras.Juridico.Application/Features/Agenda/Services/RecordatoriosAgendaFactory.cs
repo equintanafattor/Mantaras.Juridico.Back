@@ -18,7 +18,13 @@ internal static class RecordatoriosAgendaFactory
             entrada,
             configuraciones
                 .Where(x => x.Activo)
-                .Select(x => (x.BaseCalculo, x.MinutosAnticipacion)),
+                .Select(x => (
+                    x.BaseCalculo,
+                    x.MinutosAnticipacion,
+                    OrigenRecordatorioAgenda.Categoria,
+                    (long?)x.TipoEntradaAgendaId,
+                    (long?)null
+                )),
             fechaCreacion,
             usuario
         );
@@ -35,17 +41,28 @@ internal static class RecordatoriosAgendaFactory
             entrada,
             configuraciones
                 .Where(x => x.Activo)
-                .Select(x => (x.BaseCalculo, x.MinutosAnticipacion)),
+                .Select(x => (
+                    x.BaseCalculo,
+                    x.MinutosAnticipacion,
+                    OrigenRecordatorioAgenda.Regla,
+                    (long?)null,
+                    (long?)x.ReglaVencimientoId
+                )),
             fechaCreacion,
             usuario
         );
     }
 
+    // Si dos configuraciones dan la misma fecha programada se guarda una sola:
+    // la primera agregada conserva su origen (la categoría se agrega antes que la regla).
     private static void Agregar(
         EntradaAgenda entrada,
         IEnumerable<(
             BaseCalculoRecordatorioAgenda BaseCalculo,
-            int MinutosAnticipacion
+            int MinutosAnticipacion,
+            OrigenRecordatorioAgenda Origen,
+            long? TipoEntradaAgendaOrigenId,
+            long? ReglaVencimientoOrigenId
         )> configuraciones,
         DateTime fechaCreacion,
         string usuario
@@ -93,6 +110,9 @@ internal static class RecordatoriosAgendaFactory
                     Canal = CanalRecordatorioAgenda.Interno,
                     FechaProgramadaUtc = fechaProgramadaUtc,
                     Atendido = false,
+                    Origen = configuracion.Origen,
+                    TipoEntradaAgendaOrigenId = configuracion.TipoEntradaAgendaOrigenId,
+                    ReglaVencimientoOrigenId = configuracion.ReglaVencimientoOrigenId,
                     FechaCreacion = fechaCreacion,
                     UsuarioCreacion = usuario,
                     Activo = true,

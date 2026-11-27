@@ -29,6 +29,16 @@ public sealed class RecordatorioAgendaResponse
 
     public long? UsuarioAtendioId { get; set; }
 
+    // Procedencia registrada al crear el aviso: Manual, Categoria, Regla o Desconocido
+    // (avisos anteriores al registro del origen). Se conserva al reprogramar y al atender.
+    public OrigenRecordatorioAgenda Origen { get; set; }
+
+    // Id de la categoría (TipoEntradaAgenda) o de la regla (ReglaVencimiento). Null con Manual o Desconocido.
+    public long? OrigenId { get; set; }
+
+    // Nombre actual de esa categoría o regla, aunque esté dada de baja. Null con Manual o Desconocido.
+    public string? OrigenNombre { get; set; }
+
     public DateTime FechaCreacion { get; set; }
 
     public bool Activo { get; set; }

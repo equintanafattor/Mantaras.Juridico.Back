@@ -11,7 +11,7 @@ Desde el judicial se registra que se envió una **cédula** u **oficio** de cobr
 
 1. Se guarda el envío (`EnviosCobroExpedientes`).
 2. El judicial pasa a aparecer en el **listado de expedientes de cobro**.
-3. El motor de reglas de agenda que ya existe genera una entrada de agenda con vencimiento a los **120 días hábiles** desde la fecha de envío, más una **alerta interna** (recordatorio) para ese día a las 09:00 hora de Argentina.
+3. El motor de reglas de agenda que ya existe genera una entrada de agenda con vencimiento a los **120 días hábiles** desde la fecha de envío, más un **aviso interno** (recordatorio) para ese día a las 09:00 hora de Argentina.
 
 Los días hábiles excluyen sábados, domingos y los días inhábiles **activos** del calendario (`/api/dias-inhabiles`). No hay un calculador nuevo: se reutiliza el mismo cálculo de `POST /api/reglas-vencimiento/{id}/aplicar`.
 
